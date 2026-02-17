@@ -2,6 +2,10 @@
 Chat loop: user input -> prompt.py -> Ollama -> print response -> loop
 Self-contained agent. Run from agent/: python chat.py
 """
+import warnings
+warnings.filterwarnings("ignore", message="urllib3 v2 only supports OpenSSL")
+warnings.filterwarnings("ignore", module="urllib3")
+
 import json
 import sys
 from datetime import datetime
