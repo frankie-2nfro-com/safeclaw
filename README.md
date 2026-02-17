@@ -137,6 +137,7 @@ python start_router.py
 
 - **agent/agent_design_details.txt** – Agent structure, components, actions, config
 - **router/router_design_details.txt** – Router structure, skills, Redis flow, adding skills
+- **VERSIONING.md** – Version workflow, push_new_version.sh, roll_back_version.sh
 - **idea.txt** – Architecture vision, biological-first design
 
 ---

@@ -17,6 +17,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.0.2] - 2026-02-17
+
+### Added
+- N/A
+
+### Changed
+- push_new_version.sh
+
+### Fixed
+- Fix push_new_version.sh not remove and add file
+
+---
+
 ## [1.0.1] - 2026-02-17
 
 ### Added

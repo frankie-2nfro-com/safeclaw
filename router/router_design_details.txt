@@ -19,7 +19,8 @@ DIRECTORY STRUCTURE
 router/
 ├── start_router.py          # Entry point. Loads .env, instantiates Router, runs.
 ├── .env                     # REDIS_URL, COMMAND_QUEUE, RESPONSE_PREFIX
-├── config.json              # (Reserved) Skill config, allow-list, enable/disable
+├── config_initial.json      # Default config (tracked). Copied to config.json on first run.
+├── config.json              # Runtime config (gitignored). Created from config_initial if missing.
 ├── requirements.txt         # redis, python-dotenv
 ├── README.md
 ├── router_design_details.txt
@@ -75,13 +76,20 @@ Agent subscribes:
   -> receives result, continues loop
 
 
-CONFIGURATION (.env)
--------------------
+CONFIGURATION
+-------------
 
-REDIS_URL          - Redis connection (e.g. redis://host:6379/0)
-COMMAND_QUEUE      - Queue name for incoming commands (default: safeclaw:command_queue)
-RESPONSE_PREFIX    - Prefix for response keys (default: safeclaw:response:)
-                     Full key = {RESPONSE_PREFIX}{message_id}
+.env (required):
+  REDIS_URL          - Redis connection (e.g. redis://host:6379/0)
+  COMMAND_QUEUE      - Override queue name (optional)
+  RESPONSE_PREFIX    - Override response prefix (optional)
+
+config.json (optional, created from config_initial.json on first run):
+  Router behavior only. Environment (queues, Redis) stays in .env.
+  skills            - Per-skill settings:
+    ACTION_NAME:
+      enabled       - true/false. If false, command is skipped.
+      (other)       - Skill-specific settings (passed to skill if needed)
 
 
 ADDING A NEW SKILL

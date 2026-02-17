@@ -9,14 +9,38 @@ import json
 import os
 import signal
 import sys
+from pathlib import Path
 from typing import Optional
 from redis import Redis
 
+ROUTER_DIR = Path(__file__).resolve().parent.parent
+
+
 class Router:
-    def __init__(self, redis_url: Optional[str] = None):
+    def __init__(self, redis_url: Optional[str] = None, config_path: Optional[Path] = None):
         self.redis_url = redis_url or os.getenv("REDIS_URL")
         self._redis: Optional[Redis] = None
         self._running = False
+        self.config_path = config_path or (ROUTER_DIR / "config.json")
+        self.config = self._load_config()
+
+    def _load_config(self) -> dict:
+        """Load config.json. If missing or invalid, copy from config_initial.json first."""
+        config_file = self.config_path
+        initial_file = config_file.parent / "config_initial.json"
+        if not config_file.exists() and initial_file.exists():
+            config_file.write_text(initial_file.read_text(encoding="utf-8"), encoding="utf-8")
+        if config_file.exists():
+            try:
+                raw = config_file.read_text(encoding="utf-8").strip()
+                if raw:
+                    return json.loads(raw)
+            except json.JSONDecodeError:
+                pass
+            if initial_file.exists():
+                config_file.write_text(initial_file.read_text(encoding="utf-8"), encoding="utf-8")
+                return json.loads(config_file.read_text(encoding="utf-8"))
+        return {}
 
     def _get_redis(self) -> Redis:
         if self._redis is None:
@@ -35,9 +59,13 @@ class Router:
 
     def route_command(self, action: str, params: dict):
         """
-        Route the command. Load skill class dynamically and call execute().
+        Route the command. Check config for allow-list/enabled, then load skill and execute().
         Returns result from skill.execute().
         """
+        skills_config = self.config.get("skills", {})
+        skill_config = skills_config.get(action, {})
+        if skill_config.get("enabled", True) is False:
+            return {"status": "skipped", "reason": f"Skill {action} is disabled in config"}
         SkillClass = self._get_skill_class(action)
         skill = SkillClass()
         return skill.execute(params)
