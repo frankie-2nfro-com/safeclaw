@@ -54,18 +54,43 @@ SafeClaw/
 
 ---
 
+## Prerequisites
+
+### Redis (LAN)
+
+Redis must be running and reachable on your local network. Agent and Router communicate via Redis queues.
+
+- Install Redis on a machine in your LAN (or use Docker: `docker run -d -p 6379:6379 redis`).
+- Ensure the Redis host is accessible from both Agent and Router (e.g. `redis://192.168.1.100:6379/0`).
+- Agent and Router can run on different machines as long as they can both connect to the same Redis instance.
+
+---
+
 ## Quick Start
 
-### 1. Redis
+### 1. Environment setup
 
-Ensure Redis is running. Agent and Router both need `REDIS_URL` in their `.env`.
+Each component needs a `.env` file. Clone the sample and set your values:
+
+```bash
+# Agent
+cd agent
+cp .env.sample .env
+# Edit .env: set REDIS_URL (Redis in LAN), REMOTE_BROWSER_SERVER
+
+# Router (in another terminal or machine)
+cd router
+cp .env.sample .env
+# Edit .env: set REDIS_URL (same Redis as Agent)
+```
+
+Use your Redis host's LAN IP (e.g. `redis://192.168.1.100:6379/0`) so both Agent and Router can connect.
 
 ### 2. Agent
 
 ```bash
 cd agent
 pip install -r requirements.txt
-# Copy .env, set REDIS_URL, REMOTE_BROWSER_SERVER
 python chat.py
 ```
 
@@ -76,7 +101,6 @@ Requires: **Ollama** (ollama serve, ollama pull llama3.1:8B).
 ```bash
 cd router
 pip install -r requirements.txt
-# Copy .env, set REDIS_URL
 python start_router.py
 ```
 
