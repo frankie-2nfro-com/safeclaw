@@ -17,6 +17,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.0.1] - 2026-02-17
+
+### Added
+- router config_initial.json
+
+### Changed
+- Router start will load config.json in object. if not found, it will clone a config.json from config_initial.json
+
+### Fixed
+- N/A
+
+---
+
 ## [1.0.0] - 2026-02-17
 
 ### Added
