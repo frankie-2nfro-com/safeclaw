@@ -1,0 +1,113 @@
+================================================================================
+ROUTER - Design Details
+================================================================================
+SafeClaw Router Sub-Project
+================================================================================
+
+OVERVIEW
+--------
+The Router is the "Agent-Wall" of SafeClaw. It runs as a separate, self-contained
+process (or on another machine). It consumes commands from a Redis queue, routes
+them to skills by action name, executes the skill, and pushes results back to a
+response queue. This decouples the Agent (brain) from the actual execution of
+external/sensitive actions.
+
+
+DIRECTORY STRUCTURE
+-------------------
+
+router/
+├── start_router.py          # Entry point. Loads .env, instantiates Router, runs.
+├── .env                     # REDIS_URL, COMMAND_QUEUE, RESPONSE_PREFIX
+├── config.json              # (Reserved) Skill config, allow-list, enable/disable
+├── requirements.txt         # redis, python-dotenv
+├── README.md
+├── router_design_details.txt
+│
+├── libs/
+│   ├── router.py            # Router class: Redis loop, route_command, skill loading
+│   └── base_skill.py        # Abstract BaseSkill with execute(params) -> result
+│
+└── skills/
+    ├── __init__.py
+    └── create_post/
+        ├── __init__.py
+        └── skill.py         # CreatePostSkill(BaseSkill).execute(params)
+
+
+COMPONENTS
+----------
+
+1. start_router.py
+   - Startup script. Must be run from router/ directory (or with router/ in path).
+   - Loads .env, creates Router(), calls router.run().
+
+2. libs/router.py (Router class)
+   - _get_redis()         : Lazy Redis connection
+   - _get_skill_class()    : Dynamic load: CREATE_POST -> skills.create_post.skill.CreatePostSkill
+   - route_command()       : Instantiate skill, call execute(params), return result
+   - run()                 : Main loop: BRPOP command_queue -> route_command -> LPUSH response
+
+3. libs/base_skill.py (BaseSkill)
+   - Abstract base for all skills.
+   - Subclasses must implement: execute(self, params: dict) -> dict
+
+4. skills/{action_name}/skill.py
+   - One folder per action. Action CREATE_POST -> skills/create_post/skill.py
+   - Class name: CreatePostSkill (PascalCase of action + "Skill")
+   - execute(params) returns a dict merged into the response sent to the Agent.
+
+
+REDIS FLOW
+----------
+
+Agent pushes:
+  LPUSH safeclaw:command_queue  ->  {"message_id": "...", "action": "CREATE_POST", "params": {...}}
+
+Router:
+  BLPOP safeclaw:command_queue  (blocking, timeout 1s)
+  -> parse payload
+  -> route_command(action, params)
+  -> LPUSH safeclaw:response:{message_id}  ->  {"status": "ok", "action": "...", ...result}
+
+Agent subscribes:
+  BLPOP safeclaw:response:{message_id}  (timeout 10s)
+  -> receives result, continues loop
+
+
+CONFIGURATION (.env)
+-------------------
+
+REDIS_URL          - Redis connection (e.g. redis://host:6379/0)
+COMMAND_QUEUE      - Queue name for incoming commands (default: safeclaw:command_queue)
+RESPONSE_PREFIX    - Prefix for response keys (default: safeclaw:response:)
+                     Full key = {RESPONSE_PREFIX}{message_id}
+
+
+ADDING A NEW SKILL
+------------------
+
+1. Create skills/{action_name}/skill.py
+   - action_name = snake_case, e.g. generate_news_feed
+
+2. Define class {ActionName}Skill(BaseSkill)
+   - e.g. class GenerateNewsFeedSkill(BaseSkill)
+
+3. Implement execute(self, params: dict)
+   - Return dict (merged into response to Agent)
+
+4. Ensure action is in agent workspace/router_actions.json so the LLM knows it exists.
+
+5. Router auto-loads: action GENERATE_NEWS_FEED -> skills.generate_news_feed.skill.GenerateNewsFeedSkill
+
+
+RUN
+---
+
+From router directory:
+  python start_router.py
+
+Or:
+  ./start_router.py
+
+Ensure .env is present and REDIS_URL is set.

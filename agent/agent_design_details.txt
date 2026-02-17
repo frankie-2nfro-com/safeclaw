@@ -1,0 +1,169 @@
+================================================================================
+AGENT - Design Details
+================================================================================
+SafeClaw Agent Sub-Project
+================================================================================
+
+OVERVIEW
+--------
+The Agent is the "Mind" of SafeClaw. It runs as a separate, self-contained process.
+It implements the Think-Act-Observe loop: reads user input, builds a prompt from
+context (SOUL, memory, artifact, history), sends to an LLM (Ollama), parses the
+response for <tool_code> actions, and executes them. Agent actions run locally;
+Router actions are pushed to Redis and the Agent waits for the response.
+
+
+DIRECTORY STRUCTURE
+-------------------
+
+agent/
+├── chat.py                  # Entry point. Main loop: input -> prompt -> LLM -> actions
+├── .env                     # REDIS_URL, REMOTE_BROWSER_SERVER, COMMAND_QUEUE, RESPONSE_PREFIX
+├── requirements.txt         # ollama, redis, python-dotenv
+├── README.md
+├── agent_design_details.txt
+│
+├── libs/
+│   ├── prompt.py            # Prompt class: builds prompt from PROMPT.md template
+│   ├── llm_response.py     # LLMResponse: parses <tool_code> from LLM output
+│   ├── action_executor.py  # ActionExecutor: runs agent actions, pushes router actions
+│   └── remote_chrome_utils.py  # dismiss_consent() for BROWSER_VISION
+│
+├── workspace/               # Runtime context and config
+│   ├── PROMPT.md            # Main prompt template (placeholders)
+│   ├── SOUL.md              # Identity, tone, ethical boundaries
+│   ├── memory.json          # Persistent key-value memory
+│   ├── agent_action.json    # Agent actions the LLM can call (local)
+│   ├── router_actions.json  # Router actions the LLM can call (via queue)
+│   ├── input_history.json   # Last 10 user/response pairs
+│   ├── artifact.json        # Latest action results, follow-ups
+│   └── output/              # Generated files (prompt_cache, browser_vision.*)
+│
+└── xxxxxbrain/, xxxxxear/, xxxxxmouth/, ...  # (Reserved) Future modular senses
+
+
+COMPONENTS
+----------
+
+1. chat.py (main loop)
+   - Loads input_history, builds prompt via Prompt.create_prompt()
+   - Sends to Ollama, parses LLMResponse (message + actions)
+   - For each action: ActionExecutor(action, params, workspace).execute()
+   - Handles follow-up actions (e.g. BROWSER_VISION -> _LLM_SUMMARY)
+   - Saves artifact, updates input_history
+
+2. libs/prompt.py (Prompt class)
+   - create_prompt(user_input) -> merged prompt string
+   - Loads PROMPT.md, replaces placeholders:
+     {{SOUL_CONTENT}}     <- SOUL.md
+     {{MEMORY_CONTENT}}   <- memory.json
+     {{ARTIFACT}}         <- artifact.json
+     {{USER_INPUT_HISTORY}} <- input_history.json
+     {{AGENT_ACTIONS}}    <- agent_action.json
+     {{ROUTER_ACTIONS}}   <- router_actions.json
+     {{USER_MESSAGE}}     <- escaped user input
+   - Writes result to workspace/output/prompt_cache.txt
+
+3. libs/llm_response.py (LLMResponse)
+   - Parses LLM output for <tool_code>...</tool_code>
+   - Extracts: message (text before tag), actions (JSON array)
+   - Raises LLMResponseError if invalid
+
+4. libs/action_executor.py (ActionExecutor)
+   - execute() branches:
+     A) AGENT ACTION: Has method _ACTION_NAME -> run locally
+     B) ROUTER ACTION: No local method -> push to Redis, BLPOP response (10s timeout)
+   - Agent actions: _MEMORY_WRITE, _BROWSER_VISION, _LLM_SUMMARY
+   - Router actions: any name in router_actions.json (e.g. CREATE_POST)
+
+5. libs/remote_chrome_utils.py
+   - dismiss_consent(driver): Clicks cookie/consent buttons before screenshot
+
+
+AGENT ACTIONS (local)
+---------------------
+
+_MEMORY_WRITE
+  params: { "new_memory": { "KEY": "value", ... } }
+  Merges into memory.json, returns confirmation.
+
+_BROWSER_VISION
+  params: { "url": "https://..." }
+  Uses Selenium + REMOTE_BROWSER_SERVER. Saves html, png, txt to workspace/output/.
+  Returns follow_up: _LLM_SUMMARY with content path.
+
+_LLM_SUMMARY
+  params: { "content": "<path to txt>" }
+  Summarizes file content via Ollama. Returns { "output": "..." }.
+
+
+ROUTER ACTIONS (via Redis)
+--------------------------
+
+Agent pushes to COMMAND_QUEUE, starts listener on RESPONSE_PREFIX+message_id.
+Router consumes, runs skill, pushes result. Agent receives within 10s or times out.
+
+Example: CREATE_POST
+  params: { "platform": "X", "text": "..." }
+  Router skill executes, returns { "status": "..." }.
+
+
+PROMPT TEMPLATE (PROMPT.md)
+---------------------------
+
+Placeholders:
+  {{SOUL_CONTENT}}       - Identity from SOUL.md
+  {{MEMORY_CONTENT}}     - memory.json
+  {{ARTIFACT}}           - artifact.json (last action results)
+  {{USER_INPUT_HISTORY}} - input_history.json
+  {{AGENT_ACTIONS}}      - agent_action.json (tool definitions)
+  {{ROUTER_ACTIONS}}     - router_actions.json
+  {{USER_MESSAGE}}       - Current user input (escaped)
+
+
+LLM OUTPUT FORMAT
+-----------------
+
+The LLM must respond with:
+  <optional message text><tool_code>[{"name": "ACTION", "params": {...}}, ...]</tool_code>
+
+If no tool needed: plain text only, no <tool_code>.
+
+
+CONFIGURATION (.env)
+-------------------
+
+REDIS_URL              - Redis connection (for router actions)
+REMOTE_BROWSER_SERVER  - Selenium remote Chrome URL (e.g. http://host:4444)
+COMMAND_QUEUE          - Queue for router commands (default: safeclaw:command_queue)
+RESPONSE_PREFIX        - Response key prefix (default: safeclaw:response:)
+
+
+ADDING A NEW AGENT ACTION
+-------------------------
+
+1. Add entry to workspace/agent_action.json with name, instruction, params schema.
+2. Add method _ACTION_NAME(self, params) to libs/action_executor.py.
+3. Return dict (merged into artifact).
+
+
+ADDING A NEW ROUTER ACTION
+-------------------------
+
+1. Add entry to workspace/router_actions.json.
+2. Create skill in router/skills/{action_name}/skill.py.
+3. Agent will push to queue; Router will route and execute.
+
+
+RUN
+---
+
+From agent directory:
+  python chat.py
+
+Or from project root:
+  python agent/chat.py
+
+Requires: Ollama running (ollama serve, ollama pull llama3.1:8B).
+For router actions: Redis + Router process.
+For BROWSER_VISION: REMOTE_BROWSER_SERVER (Selenium Grid / remote Chrome).

@@ -1,0 +1,38 @@
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp dev files (prefix with xxxx)
+**/xxxx*
+
+# Agent workspace output (generated)
+agent/workspace/output/
+
+# Agent runtime data (user-specific, created automatically on first run)
+agent/workspace/memory.json
+agent/workspace/input_history.json
+agent/workspace/artifact.json
+agent/workspace/agent_action.json
+agent/workspace/router_actions.json
+agent/workspace/SOUL.md

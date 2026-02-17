@@ -1,0 +1,10 @@
+[
+  {
+    "name": "CREATE_POST",
+    "instruction": "Send a social media draft to the execution queue.",
+    "params": {
+      "platform": "X | LinkedIn",
+      "text": "string"
+    }
+  }
+]
