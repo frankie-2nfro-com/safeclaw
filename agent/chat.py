@@ -7,6 +7,7 @@ warnings.filterwarnings("ignore", message="urllib3 v2 only supports OpenSSL")
 warnings.filterwarnings("ignore", module="urllib3")
 
 import json
+import os
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -16,9 +17,9 @@ _agent_dir = Path(__file__).resolve().parent
 if str(_agent_dir) not in sys.path:
     sys.path.insert(0, str(_agent_dir))
 
-import ollama
 from dotenv import load_dotenv
 
+from libs.llm_client import chat as llm_chat
 from libs.prompt import Prompt
 from libs.llm_response import LLMResponse, LLMResponseError
 from libs.action_executor import ActionExecutor
@@ -59,10 +60,11 @@ def main():
     load_dotenv(_agent_dir / ".env")
     ensure_workspace_files()
     prompt_builder = Prompt(workspace=WORKSPACE)
-    model = "llama3.1:8B"
+    provider = os.getenv("LLM_PROVIDER", "ollama")
+    model = os.getenv("LLM_MODEL", "llama3.1:8B")
 
     print("\n" + "=" * 60)
-    print(f"  SafeClaw Chat (Ollama + {model})")
+    print(f"  SafeClaw Chat ({provider} + {model})")
     print("  Type 'quit' or 'exit' to stop")
     print("=" * 60 + "\n")
 
@@ -84,16 +86,15 @@ def main():
             print("(Empty prompt, skipping)\n")
             continue
 
-        # 2. Send to llm (Ollama)
+        # 2. Send to llm
         try:
-            response = ollama.chat(
-                model=model,
-                messages=[{"role": "user", "content": prompt}],
-            )
-            output = response.message.content
+            output = llm_chat(prompt)
         except Exception as e:
             output = f"Error: {e}"
-            print("(Make sure Ollama is running: ollama serve, ollama pull mistral)")
+            if provider == "ollama":
+                print("(Make sure Ollama is running: ollama serve, ollama pull <model>)")
+            else:
+                print(f"(Check {provider.upper()}_API_KEY in .env)")
 
         # 3. Parse and print output
         try:

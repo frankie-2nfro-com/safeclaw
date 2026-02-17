@@ -17,6 +17,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.0.4] - 2026-02-17
+
+### Added
+- agent/libs/llm_client.py
+
+### Changed
+- Add LLM config to .env.sample (and .env)
+
+### Fixed
+- N/A
+
+---
+
 ## [1.0.3] - 2026-02-17
 
 ### Added

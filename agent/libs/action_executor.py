@@ -10,7 +10,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import ollama
+from libs.llm_client import chat as llm_chat
 from libs.remote_chrome_utils import dismiss_consent
 import threading
 from redis import Redis
@@ -202,15 +202,11 @@ class ActionExecutor:
 
         # use llm to summarize the content
         try:
-            model = "llama3.1:8B"
-            response = ollama.chat(
-                model=model,
-                messages=[{"role": "user", "content": "Summary in 100 words or less to the following content of a website body: \n" + content}],
-            )
-            output = response.message.content
+            summary_prompt = "Summary in 100 words or less to the following content of a website body: \n" + content
+            output = llm_chat(summary_prompt)
         except Exception as e:
             output = f"Error: {e}"
-            print("(Make sure Ollama is running: ollama serve, ollama pull mistral)")
+            print("(Check LLM_PROVIDER and API key in .env)")
 
         return {
           "action": "_LLM_SUMMARY",

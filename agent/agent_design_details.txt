@@ -133,10 +133,15 @@ If no tool needed: plain text only, no <tool_code>.
 CONFIGURATION (.env)
 -------------------
 
+LLM_PROVIDER           - ollama | openai | gemini (default: ollama)
+LLM_MODEL              - Model name (e.g. llama3.1:8B, gpt-4o)
 REDIS_URL              - Redis connection (for router actions)
 REMOTE_BROWSER_SERVER  - Selenium remote Chrome URL (e.g. http://host:4444)
 COMMAND_QUEUE          - Queue for router commands (default: safeclaw:command_queue)
 RESPONSE_PREFIX        - Response key prefix (default: safeclaw:response:)
+
+For openai: OPENAI_API_KEY
+For gemini: GOOGLE_API_KEY or GEMINI_API_KEY
 
 
 ADDING A NEW AGENT ACTION
@@ -164,6 +169,6 @@ From agent directory:
 Or from project root:
   python agent/chat.py
 
-Requires: Ollama running (ollama serve, ollama pull llama3.1:8B).
+Requires: LLM (ollama local, or openai/gemini with API key).
 For router actions: Redis + Router process.
 For BROWSER_VISION: REMOTE_BROWSER_SERVER (Selenium Grid / remote Chrome).
