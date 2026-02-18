@@ -32,9 +32,12 @@ Edit `config.json`:
       "bot_token": "YOUR_TOKEN_HERE",
       "broadcast_chat_ids": [123456789]
     }
-  ]
+  ],
+  "timeout": 10
 }
 ```
+
+- **timeout** (optional, default 10): Seconds. Messages older than this when the agent starts are ignored with "too old to handle". Also used for response queue timeout.
 
 Console is always available (no config needed). Add other channels as needed.
 

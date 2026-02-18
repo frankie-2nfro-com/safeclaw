@@ -17,6 +17,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.0.8] - 2026-02-18
+
+### Added
+- Add AgentConfig Class for config.json
+
+### Changed
+- N/A
+
+### Fixed
+- N/A
+
+---
+
 ## [1.0.7] - 2026-02-18
 
 ### Added
@@ -25,10 +38,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Create OllamaLLM class 
 
 ### Changed
-- (add changes here)
+- N/A
 
 ### Fixed
-- (add fixes here)
+- N/A
 
 ---
 

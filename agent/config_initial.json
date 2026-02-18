@@ -10,5 +10,6 @@
       "bot_token": "",
       "broadcast_chat_ids": []
     }
-  ]
+  ],
+  "timeout": 10
 }

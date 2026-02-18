@@ -26,6 +26,7 @@ agent/
 ├── agent_design_details.txt
 │
 ├── libs/
+│   ├── agent_config.py     # AgentConfig: load config, interactive prompts (./start_agent.py config <key>)
 │   ├── action_executor.py  # ActionExecutor: runs agent actions, pushes router actions
 │   └── remote_chrome_utils.py  # dismiss_consent() for BROWSER_VISION
 │
@@ -78,11 +79,16 @@ COMPONENTS
 4. libs/action_executor.py (ActionExecutor)
    - execute() branches:
      A) AGENT ACTION: Has method _ACTION_NAME -> run locally
-     B) ROUTER ACTION: No local method -> push to Redis, BLPOP response (10s timeout)
+     B) ROUTER ACTION: No local method -> push to Redis, BLPOP response (timeout from config.json)
    - Agent actions: _MEMORY_WRITE, _BROWSER_VISION, _LLM_SUMMARY
    - Router actions: any name in router_actions.json (e.g. CREATE_POST)
 
-5. libs/remote_chrome_utils.py
+5. libs/agent_config.py (AgentConfig)
+   - load_config(): Load config.json, clone from config_initial.json if missing
+   - run_interactive(key): Interactive prompts for config keys (timeout, llm)
+   - Usage: ./start_agent.py config timeout | ./start_agent.py config llm
+
+6. libs/remote_chrome_utils.py
    - dismiss_consent(driver): Clicks cookie/consent buttons before screenshot
 
 
@@ -136,15 +142,23 @@ The LLM must respond with:
 If no tool needed: plain text only, no <tool_code>.
 
 
-CONFIGURATION (.env)
--------------------
+CONFIGURATION
+-------------
 
-LLM_PROVIDER           - ollama | openai | gemini (default: ollama)
-LLM_MODEL              - Model name (e.g. llama3.1:8B, gpt-4o)
-REDIS_URL              - Redis connection (for router actions)
-REMOTE_BROWSER_SERVER  - Selenium remote Chrome URL (e.g. http://host:4444)
-COMMAND_QUEUE          - Queue for router commands (default: safeclaw:command_queue)
-RESPONSE_PREFIX        - Response key prefix (default: safeclaw:response:)
+config.json (llm, timeout, channels):
+  - llm.provider, llm.model  - LLM provider and model (default: ollama, llama3.1:8B)
+  - timeout                  - Message age and response queue timeout in seconds (default: 10)
+  - channels                 - Telegram, etc. (see channel/TELEGRAM_SETUP.md)
+
+Interactive config: ./start_agent.py config <key>
+  - ./start_agent.py config timeout
+  - ./start_agent.py config llm
+
+.env (secrets, Redis, browser):
+  REDIS_URL              - Redis connection (for router actions)
+  REMOTE_BROWSER_SERVER  - Selenium remote Chrome URL (e.g. http://host:4444)
+  COMMAND_QUEUE          - Queue for router commands (default: safeclaw:command_queue)
+  RESPONSE_PREFIX        - Response key prefix (default: safeclaw:response:)
 
 For openai: OPENAI_API_KEY
 For gemini: GOOGLE_API_KEY or GEMINI_API_KEY
@@ -174,6 +188,11 @@ From agent directory:
 
 Or from project root:
   python agent/start_agent.py
+
+Commands:
+  ./start_agent.py           - Start the agent
+  ./start_agent.py clear    - Clear workspace (artifact, input_history, log)
+  ./start_agent.py config [key] - Interactive config. Keys: timeout, llm
 
 Requires: LLM (ollama local, or openai/gemini with API key).
 For router actions: Redis + Router process.

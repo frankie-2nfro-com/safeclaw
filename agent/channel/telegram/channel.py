@@ -3,6 +3,7 @@ Telegram channel. Pure I/O for Telegram bot.
 """
 import asyncio
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, Set, Tuple
 
@@ -53,7 +54,7 @@ class TelegramChannel(BaseChannel):
                 self._broadcast_skip_logged = True
                 log("Tip: Console messages not sent to Telegram. Message the bot first or add broadcast_chat_ids to config.json (get chat ID from @userinfobot)")
             return
-        message = f"[{from_source}] {user_input}"
+        message = f"[{from_source}] I got your request: {user_input}"
         async def _send():
             for chat_id in list(chat_ids):
                 try:
@@ -107,6 +108,17 @@ class TelegramChannel(BaseChannel):
         async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             if not update.message or not update.message.text:
                 return
+            # Reject messages older than timeout (e.g. backlog from before agent started)
+            timeout = agent.config.get("timeout", 10)
+            msg_date = update.message.date
+            if msg_date:
+                if msg_date.tzinfo is None:
+                    msg_date = msg_date.replace(tzinfo=timezone.utc)
+                age_seconds = (datetime.now(timezone.utc) - msg_date).total_seconds()
+                if age_seconds > timeout:
+                    too_old_msg = f"Received this request, but it's too old to handle (>{timeout}s). Please send again."
+                    await update.message.reply_text(too_old_msg)
+                    return
             chat_id = update.effective_chat.id if update.effective_chat else None
             if chat_id is not None:
                 self._chat_ids.add(chat_id)

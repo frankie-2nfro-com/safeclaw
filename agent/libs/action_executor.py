@@ -31,6 +31,17 @@ class ActionExecutor:
         self.params = params
         self.workspace = workspace or (Path(__file__).resolve().parent.parent / "workspace")
 
+    def _get_timeout(self) -> int:
+        """Timeout in seconds from config.json (response queue, message age)."""
+        config_path = self.workspace.parent / "config.json"
+        if config_path.exists():
+            try:
+                cfg = json.loads(config_path.read_text(encoding="utf-8").strip())
+                return int(cfg.get("timeout", 10))
+            except (json.JSONDecodeError, ValueError):
+                pass
+        return 10
+
 
     def execute(self):
         # Agent actions: methods are _MEMORY_WRITE, _BROWSER_VISION (underscore prefix)
@@ -68,19 +79,18 @@ class ActionExecutor:
             # Push the action to command queue (router will pick it up and push to response:{message_id})
             self._push_to_command_queue(message_id, self.action, self.params)
 
-            # Wait for runner thread (timeout 10 seconds)
-            # If thread exits early (e.g. Redis error), join returns immediately.
-            # Sleep remainder so we always wait full 10s before next "You:" prompt.
+            # Wait for runner thread (timeout from config)
+            timeout = self._get_timeout()
             start = time.time()
-            runner_thread.join(timeout=10)
+            runner_thread.join(timeout=timeout)
             elapsed = time.time() - start
-            if elapsed < 10 and result_holder[0] is None:
-                time.sleep(10 - elapsed)
+            if elapsed < timeout and result_holder[0] is None:
+                time.sleep(timeout - elapsed)
             result = result_holder[0]
             execution_message += f"PUSH ROUTER ACTION TO QUEUE: {self.action}\n"
             executed_successfully = True
             if result is None:
-                log("Timeout 10 seconds without any response!")
+                log(f"Timeout {timeout} seconds without any response!")
 
         execution_message += f"--- Action Finished ---\n"
 
@@ -110,16 +120,16 @@ class ActionExecutor:
 
     def _subscribe_to_response_queue(self, result_holder: list, message_id: str) -> None:
         """
-        Block on response queue (BLPOP safeclaw:response:{message_id}, timeout 10s).
+        Block on response queue (BLPOP safeclaw:response:{message_id}, timeout from config).
         On response: set result_holder[0] = parsed result.
         On timeout/error: result_holder[0] stays None. Ignores errors.
         """
         response_key = f"{RESPONSE_PREFIX}{message_id}"
+        timeout = self._get_timeout()
         try:
             r = self._get_redis()
-            log("Waiting for response for 10 seconds...")
-            # BLPOP blocks for up to 10 seconds
-            blpop_result = r.blpop(response_key, timeout=10)
+            log(f"Waiting for response for {timeout} seconds...")
+            blpop_result = r.blpop(response_key, timeout=timeout)
             if blpop_result:
                 log("RESPONSE_FOUND")
                 _, raw = blpop_result

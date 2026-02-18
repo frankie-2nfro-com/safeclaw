@@ -13,6 +13,7 @@ from typing import List, Optional
 from dotenv import load_dotenv
 
 from channel.console.channel import ConsoleChannel
+from libs.agent_config import AgentConfig
 from libs.logger import LOG_PATH, dialog, log, setup
 from channel.telegram.channel import TelegramChannel
 from llm import get_llm
@@ -42,21 +43,7 @@ class BaseAgent:
     @classmethod
     def load_config(cls) -> dict:
         """Load config.json. If missing, clone from config_initial.json first."""
-        config_file = cls.CONFIG_PATH
-        initial_file = cls.CONFIG_INITIAL_PATH
-        if not config_file.exists() and initial_file.exists():
-            config_file.write_text(initial_file.read_text(encoding="utf-8"), encoding="utf-8")
-        if config_file.exists():
-            try:
-                raw = config_file.read_text(encoding="utf-8").strip()
-                if raw:
-                    return json.loads(raw)
-            except json.JSONDecodeError:
-                pass
-            if initial_file.exists():
-                config_file.write_text(initial_file.read_text(encoding="utf-8"), encoding="utf-8")
-                return json.loads(config_file.read_text(encoding="utf-8"))
-        return {"channels": []}
+        return AgentConfig.load_config()
 
     def __init__(self, config: Optional[dict] = None, console_monitor: bool = True):
         """

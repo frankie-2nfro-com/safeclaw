@@ -24,14 +24,25 @@ Or from project root:
 python agent/start_agent.py
 ```
 
+## Config
+
+Interactive config prompts:
+```bash
+./start_agent.py config timeout   # Set request timeout
+./start_agent.py config llm       # Set provider and model
+./start_agent.py config           # List available keys
+```
+
 ## Structure
 
 ```
 agent/
-  start_agent.py   # Entry point
-  .env             # REDIS_URL, REMOTE_BROWSER_SERVER, LLM_PROVIDER, etc.
+  start_agent.py   # Entry point (run, clear, config)
+  config.json      # Runtime config (llm, timeout, channels). Edit or use config command.
+  .env             # REDIS_URL, REMOTE_BROWSER_SERVER, API keys
   requirements.txt
   libs/
+    agent_config.py    # AgentConfig: load config, interactive prompts
     action_executor.py
     remote_chrome_utils.py
   llm/             # LLM providers (ollama, openai, gemini)
