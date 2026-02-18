@@ -1,6 +1,7 @@
 """
 Base agent: workspace, process_turn logic, and channels.
 Channels are I/O (ConsoleChannel, TelegramChannel, etc.) - parts of the agent.
+On startup: load config.json (clone from config_initial.json if missing), use llm settings to select LLM class.
 """
 import json
 import os
@@ -14,7 +15,7 @@ from dotenv import load_dotenv
 from channel.console.channel import ConsoleChannel
 from libs.logger import LOG_PATH, dialog, log, setup
 from channel.telegram.channel import TelegramChannel
-from libs.base_llm import BaseLLM
+from llm import get_llm
 
 
 class BaseAgent:
@@ -40,29 +41,27 @@ class BaseAgent:
 
     @classmethod
     def load_config(cls) -> dict:
-        """Load config.json. If missing, copy from config_initial.json."""
-        if not cls.CONFIG_PATH.exists() and cls.CONFIG_INITIAL_PATH.exists():
-            cls.CONFIG_PATH.write_text(
-                cls.CONFIG_INITIAL_PATH.read_text(encoding="utf-8"), encoding="utf-8"
-            )
-        if cls.CONFIG_PATH.exists():
+        """Load config.json. If missing, clone from config_initial.json first."""
+        config_file = cls.CONFIG_PATH
+        initial_file = cls.CONFIG_INITIAL_PATH
+        if not config_file.exists() and initial_file.exists():
+            config_file.write_text(initial_file.read_text(encoding="utf-8"), encoding="utf-8")
+        if config_file.exists():
             try:
-                raw = cls.CONFIG_PATH.read_text(encoding="utf-8").strip()
+                raw = config_file.read_text(encoding="utf-8").strip()
                 if raw:
                     return json.loads(raw)
             except json.JSONDecodeError:
                 pass
-            if cls.CONFIG_INITIAL_PATH.exists():
-                cls.CONFIG_PATH.write_text(
-                    cls.CONFIG_INITIAL_PATH.read_text(encoding="utf-8"), encoding="utf-8"
-                )
-                return json.loads(cls.CONFIG_PATH.read_text(encoding="utf-8"))
+            if initial_file.exists():
+                config_file.write_text(initial_file.read_text(encoding="utf-8"), encoding="utf-8")
+                return json.loads(config_file.read_text(encoding="utf-8"))
         return {"channels": []}
 
     def __init__(self, config: Optional[dict] = None, console_monitor: bool = True):
         """
         Read argv, load config, build channels. If argv has 'clear', clear workspace and set _exit_clear.
-        config: optional override; if None, load from config.json.
+        config: optional override; if None, load from config.json (cloned from config_initial.json if missing).
         """
         load_dotenv()
         setup()
@@ -96,13 +95,17 @@ class BaseAgent:
     def _ensure_ready(self) -> None:
         if self._llm is None:
             self.ensure_workspace_files()
-            self._provider = os.getenv("LLM_PROVIDER", "ollama")
-            self._llm = BaseLLM(workspace=self.WORKSPACE, provider=self._provider)
+            # LLM settings from config.json (config first, env fallback)
+            llm_cfg = self.config.get("llm", {})
+            self._provider = llm_cfg.get("provider") or os.getenv("LLM_PROVIDER", "ollama")
+            self._model = llm_cfg.get("model") or os.getenv("LLM_MODEL", "llama3.1:8B")
+            self._llm = get_llm(workspace=self.WORKSPACE, provider=self._provider, model=self._model)
 
     def print_banner(self) -> None:
         """Show startup banner in console dialog and log."""
-        provider = os.getenv("LLM_PROVIDER", "ollama")
-        model = os.getenv("LLM_MODEL", "llama3.1:8B")
+        llm_cfg = self.config.get("llm", {})
+        provider = llm_cfg.get("provider") or os.getenv("LLM_PROVIDER", "ollama")
+        model = llm_cfg.get("model") or os.getenv("LLM_MODEL", "llama3.1:8B")
         channel_names = [c.source_name for c in self.channels]
         dialog(f"SafeClaw Agent ({provider} + {model}), Channels: {', '.join(channel_names)}")
 
@@ -116,7 +119,7 @@ class BaseAgent:
         console_ch = next((c for c in self.channels if c.source_name == "Console"), None)
         if telegram_ch:
             # Print Telegram status before Console prompt ("You: ")
-            dialog("Telegram bot running. Send a message to your bot.")
+            dialog("Telegram bot running. Send a message to your bot.\n")
             if not getattr(telegram_ch, "_broadcast_chat_ids", set()):
                 dialog("Tip: To receive Console messages in Telegram, message the bot first or add broadcast_chat_ids to config.json (get chat ID from @userinfobot)")
             # Run Console in background thread, Telegram in main
@@ -159,8 +162,9 @@ class BaseAgent:
         for target, source in cls.WORKSPACE_INITIAL_TEMPLATES.items():
             target_path = cls.WORKSPACE / target
             source_path = cls.WORKSPACE / source
-            if not target_path.exists() and source_path.exists():
-                target_path.write_text(source_path.read_text(encoding="utf-8"), encoding="utf-8")
+            if target_path.exists() or not source_path.exists():
+                continue
+            target_path.write_text(source_path.read_text(encoding="utf-8"), encoding="utf-8")
 
     @classmethod
     def clear_workspace(cls) -> None:

@@ -15,6 +15,8 @@ from libs.logger import log
 from libs.remote_chrome_utils import dismiss_consent
 from redis import Redis
 
+from llm import get_llm
+
 COMMAND_QUEUE = "safeclaw:command_queue"
 RESPONSE_PREFIX = "safeclaw:response:"
 
@@ -202,10 +204,8 @@ class ActionExecutor:
 
         # use llm to summarize the content
         try:
-            from libs.base_llm import BaseLLM
-
             summary_prompt = "Summary in 100 words or less to the following content of a website body: \n" + content
-            llm = BaseLLM(workspace=self.workspace, provider=os.getenv("LLM_PROVIDER", "ollama"))
+            llm = get_llm(workspace=self.workspace)
             output = llm.chat(summary_prompt)
         except Exception as e:
             output = f"Error: {e}"

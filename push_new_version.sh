@@ -63,7 +63,7 @@ PYEOF
 # Update VERSION for next development cycle
 echo "$NEXT" > VERSION
 
-# Commit and tag (include all changes; gitignore excludes .env, config.json, etc.)
+# Commit and tag (stages all changes: new, modified, deleted, moved/renamed files)
 git add -A
 git status
 echo ""

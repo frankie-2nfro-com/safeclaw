@@ -29,12 +29,16 @@ python agent/start_agent.py
 ```
 agent/
   start_agent.py   # Entry point
-  .env             # REDIS_URL, REMOTE_BROWSER_SERVER, etc.
+  .env             # REDIS_URL, REMOTE_BROWSER_SERVER, LLM_PROVIDER, etc.
   requirements.txt
   libs/
-    base_llm.py
     action_executor.py
     remote_chrome_utils.py
+  llm/             # LLM providers (ollama, openai, gemini)
+    base_llm.py
+    ollama/llm.py
+    ...
+  channel/        # I/O channels (console, telegram)
   workspace/
     memory.json
     input_history.json

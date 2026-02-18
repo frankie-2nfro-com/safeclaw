@@ -1,16 +1,14 @@
 """
-BaseLLM: client, response parsing, prompt building, and process_turn.
-Consolidates llm_client, llm_response, prompt, and chat_core.
+BaseLLM: prompt building, response parsing, process_turn.
+Provider-specific chat() is implemented by subclasses (OllamaLLM, GeminiLLM, etc.).
 """
 import json
 import os
 import re
+from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Tuple
-
-import ollama
-from libs.action_executor import ActionExecutor
 
 
 class LLMResponseError(Exception):
@@ -18,12 +16,13 @@ class LLMResponseError(Exception):
     pass
 
 
-class BaseLLM:
-    """LLM client, prompt building, response parsing, and turn processing."""
+class BaseLLM(ABC):
+    """Base LLM: prompt, parse, process_turn. Subclasses implement chat() for provider-specific connection."""
 
-    def __init__(self, workspace: Path, provider: str = "ollama"):
+    def __init__(self, workspace: Path, provider: str = "ollama", model: Optional[str] = None):
         self.workspace = workspace
         self.provider = provider or os.getenv("LLM_PROVIDER", "ollama")
+        self.model = model or os.getenv("LLM_MODEL", "llama3.1:8B")
         self._root = Path(__file__).resolve().parent.parent
         self.output_file = workspace / "output" / "prompt_cache.txt"
 
@@ -131,46 +130,10 @@ class BaseLLM:
         self.output_file.write_text(prompt, encoding="utf-8")
         return prompt
 
-    # --- LLM client (from llm_client.py) ---
+    @abstractmethod
     def chat(self, prompt: str) -> str:
-        provider = (os.getenv("LLM_PROVIDER") or self.provider or "ollama").lower()
-        model = os.getenv("LLM_MODEL") or "llama3.1:8B"
-
-        if provider == "ollama":
-            return self._chat_ollama(prompt, model)
-        if provider == "openai":
-            return self._chat_openai(prompt, model)
-        if provider == "gemini":
-            return self._chat_gemini(prompt, model)
-        raise ValueError(f"Unknown LLM_PROVIDER: {provider}. Use ollama, openai, or gemini.")
-
-    def _chat_ollama(self, prompt: str, model: str) -> str:
-        response = ollama.chat(model=model, messages=[{"role": "user", "content": prompt}])
-        return response.message.content
-
-    def _chat_openai(self, prompt: str, model: str) -> str:
-        from openai import OpenAI
-
-        api_key = os.getenv("OPENAI_API_KEY")
-        if not api_key:
-            raise ValueError("OPENAI_API_KEY not set for provider=openai")
-        client = OpenAI(api_key=api_key)
-        response = client.chat.completions.create(
-            model=model,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        return response.choices[0].message.content
-
-    def _chat_gemini(self, prompt: str, model: str) -> str:
-        import google.generativeai as genai
-
-        api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            raise ValueError("GOOGLE_API_KEY or GEMINI_API_KEY not set for provider=gemini")
-        genai.configure(api_key=api_key)
-        gemini = genai.GenerativeModel(model)
-        response = gemini.generate_content(prompt)
-        return response.text
+        """Send prompt to LLM and return response. Implemented by provider subclasses."""
+        pass
 
     # --- Response parsing (from llm_response.py) ---
     def _parse_response(self, output: str) -> Tuple[str, Optional[list]]:
@@ -208,15 +171,14 @@ class BaseLLM:
         try:
             output = self.chat(prompt)
         except Exception as e:
-            if self.provider == "ollama":
-                return f"Error: {e}\n(Make sure Ollama is running: ollama serve, ollama pull <model>)"
-            return f"Error: {e}\n(Check API key in .env)"
+            return self._format_chat_error(e)
 
         try:
             message, actions = self._parse_response(output)
             response_parts = [message]
 
             if actions:
+                from libs.action_executor import ActionExecutor
                 artifact = {"timestamp": datetime.now().isoformat(), "data": []}
                 for action in actions:
                     try:
@@ -257,3 +219,7 @@ class BaseLLM:
 
         except LLMResponseError as e:
             return f"(Parse error: {e})"
+
+    def _format_chat_error(self, e: Exception) -> str:
+        """Override in subclasses for provider-specific error messages."""
+        return f"Error: {e}\n(Check API key in .env)"

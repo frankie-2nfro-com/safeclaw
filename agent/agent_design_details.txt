@@ -26,9 +26,14 @@ agent/
 ├── agent_design_details.txt
 │
 ├── libs/
-│   ├── base_llm.py          # BaseLLM: client, prompt, response parse, process_turn
 │   ├── action_executor.py  # ActionExecutor: runs agent actions, pushes router actions
 │   └── remote_chrome_utils.py  # dismiss_consent() for BROWSER_VISION
+│
+├── llm/                     # LLM providers (like channel structure)
+│   ├── base_llm.py         # BaseLLM: prompt, parse, process_turn. Subclasses implement chat()
+│   ├── ollama/
+│   │   ├── llm.py          # OllamaLLM: local Ollama connection
+│   │   └── OLLAMA_SETUP.md
 │
 ├── workspace/               # Runtime context and config
 │   ├── PROMPT.md            # Main prompt template (placeholders)
@@ -53,7 +58,7 @@ COMPONENTS
    - Handles follow-up actions (e.g. BROWSER_VISION -> _LLM_SUMMARY)
    - Saves artifact, updates input_history
 
-2. libs/base_llm.py (BaseLLM: prompt, chat, parse, process_turn)
+2. llm/base_llm.py (BaseLLM: prompt, parse, process_turn)
    - create_prompt(user_input) -> merged prompt string
    - Loads PROMPT.md, replaces placeholders:
      {{SOUL_CONTENT}}     <- SOUL.md
@@ -65,7 +70,7 @@ COMPONENTS
      {{USER_MESSAGE}}     <- escaped user input
    - Writes result to workspace/output/prompt_cache.txt
 
-3. libs/base_llm.py (response parsing)
+3. llm/base_llm.py (response parsing)
    - Parses LLM output for <tool_code>...</tool_code>
    - Extracts: message (text before tag), actions (JSON array)
    - Raises LLMResponseError if invalid
