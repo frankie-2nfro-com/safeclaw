@@ -1,3 +1,10 @@
 {
-  "channels": []
+  "channels": [
+    {
+      "name": "telegram",
+      "enabled": false,
+      "bot_token": "",
+      "broadcast_chat_ids": []
+    }
+  ]
 }

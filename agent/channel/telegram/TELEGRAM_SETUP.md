@@ -10,7 +10,7 @@
 
 ## 2. Configure the Channel
 
-Copy the config and edit the Telegram channel:
+Copy the config and edit the Telegram channel. Config files live in `agent/` (same folder as config.json), not in workspace:
 
 ```bash
 cd agent

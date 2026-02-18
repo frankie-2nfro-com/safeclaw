@@ -18,6 +18,8 @@ DIRECTORY STRUCTURE
 
 agent/
 ├── start_agent.py            # Entry point. Loads config, BaseAgent + channels (Console, Telegram, etc.)
+├── config.json               # Runtime config (gitignored). Channels, tokens, etc.
+├── config_initial.json       # Template. Copy to config.json on first run.
 ├── .env                     # REDIS_URL, REMOTE_BROWSER_SERVER, COMMAND_QUEUE, RESPONSE_PREFIX
 ├── requirements.txt         # ollama, redis, python-dotenv
 ├── README.md
