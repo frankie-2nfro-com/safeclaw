@@ -16,25 +16,24 @@ Copy `.env` and set `REDIS_URL`, `REMOTE_BROWSER_SERVER` as needed.
 From agent directory:
 ```bash
 cd agent
-python chat.py
+python start_agent.py
 ```
 
 Or from project root:
 ```bash
-python agent/chat.py
+python agent/start_agent.py
 ```
 
 ## Structure
 
 ```
 agent/
-  chat.py          # Entry point
+  start_agent.py   # Entry point
   .env             # REDIS_URL, REMOTE_BROWSER_SERVER, etc.
   requirements.txt
   libs/
-    prompt.py
+    base_llm.py
     action_executor.py
-    llm_response.py
     remote_chrome_utils.py
   workspace/
     memory.json

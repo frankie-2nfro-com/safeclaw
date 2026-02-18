@@ -29,6 +29,7 @@ Thumbs.db
 
 # Agent workspace output (generated)
 agent/workspace/output/
+agent/logs/
 
 # Agent runtime data (user-specific, created automatically on first run)
 agent/workspace/memory.json
@@ -41,4 +42,5 @@ agent/workspace/SOUL.md
 
 temp/
 
-router/config.json 
+router/config.json
+agent/config.json

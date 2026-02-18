@@ -7,3 +7,6 @@ python-dotenv>=1.0.0
 
 # Optional: for LLM_PROVIDER=gemini
 # google-generativeai>=0.3.0
+
+# Optional: for Telegram channel (start_agent.py)
+python-telegram-bot>=22.0

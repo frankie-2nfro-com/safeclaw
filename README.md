@@ -35,8 +35,8 @@ SafeClaw/
 ├── todo.txt
 │
 ├── agent/                 # Self-contained "Mind" component
-│   ├── chat.py            # Entry point
-│   ├── libs/              # prompt, action_executor, llm_response, remote_chrome_utils
+│   ├── start_agent.py     # Entry point
+│   ├── libs/              # base_llm, action_executor, remote_chrome_utils
 │   ├── workspace/         # PROMPT.md, SOUL.md, memory, artifacts
 │   ├── README.md
 │   └── agent_design_details.txt
@@ -91,7 +91,7 @@ Use your Redis host's LAN IP (e.g. `redis://192.168.1.100:6379/0`) so both Agent
 ```bash
 cd agent
 pip install -r requirements.txt
-python chat.py
+python start_agent.py
 ```
 
 Requires: **Ollama** (ollama serve, ollama pull llama3.1:8B).
@@ -107,7 +107,7 @@ python start_router.py
 ### 4. Run both
 
 - Terminal 1: `cd router && python start_router.py`
-- Terminal 2: `cd agent && python chat.py`
+- Terminal 2: `cd agent && python start_agent.py`
 
 ---
 
@@ -115,7 +115,7 @@ python start_router.py
 
 | Component | Role | Runs |
 |-----------|------|------|
-| **Agent** | Think-Act-Observe loop, LLM calls, local actions, queue push | `agent/chat.py` |
+| **Agent** | Think-Act-Observe loop, LLM calls, local actions, queue push | `agent/start_agent.py` |
 | **Router** | Consume queue, route to skills, execute, push response | `router/start_router.py` |
 | **Redis** | Command queue, response queues | External |
 

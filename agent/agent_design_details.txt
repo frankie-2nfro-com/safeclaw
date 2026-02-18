@@ -17,15 +17,14 @@ DIRECTORY STRUCTURE
 -------------------
 
 agent/
-├── chat.py                  # Entry point. Main loop: input -> prompt -> LLM -> actions
+├── start_agent.py            # Entry point. Loads config, BaseAgent + channels (Console, Telegram, etc.)
 ├── .env                     # REDIS_URL, REMOTE_BROWSER_SERVER, COMMAND_QUEUE, RESPONSE_PREFIX
 ├── requirements.txt         # ollama, redis, python-dotenv
 ├── README.md
 ├── agent_design_details.txt
 │
 ├── libs/
-│   ├── prompt.py            # Prompt class: builds prompt from PROMPT.md template
-│   ├── llm_response.py     # LLMResponse: parses <tool_code> from LLM output
+│   ├── base_llm.py          # BaseLLM: client, prompt, response parse, process_turn
 │   ├── action_executor.py  # ActionExecutor: runs agent actions, pushes router actions
 │   └── remote_chrome_utils.py  # dismiss_consent() for BROWSER_VISION
 │
@@ -45,14 +44,14 @@ agent/
 COMPONENTS
 ----------
 
-1. chat.py (main loop)
+1. start_agent.py (main loop)
    - Loads input_history, builds prompt via Prompt.create_prompt()
    - Sends to Ollama, parses LLMResponse (message + actions)
    - For each action: ActionExecutor(action, params, workspace).execute()
    - Handles follow-up actions (e.g. BROWSER_VISION -> _LLM_SUMMARY)
    - Saves artifact, updates input_history
 
-2. libs/prompt.py (Prompt class)
+2. libs/base_llm.py (BaseLLM: prompt, chat, parse, process_turn)
    - create_prompt(user_input) -> merged prompt string
    - Loads PROMPT.md, replaces placeholders:
      {{SOUL_CONTENT}}     <- SOUL.md
@@ -64,7 +63,7 @@ COMPONENTS
      {{USER_MESSAGE}}     <- escaped user input
    - Writes result to workspace/output/prompt_cache.txt
 
-3. libs/llm_response.py (LLMResponse)
+3. libs/base_llm.py (response parsing)
    - Parses LLM output for <tool_code>...</tool_code>
    - Extracts: message (text before tag), actions (JSON array)
    - Raises LLMResponseError if invalid
@@ -164,10 +163,10 @@ RUN
 ---
 
 From agent directory:
-  python chat.py
+  python start_agent.py
 
 Or from project root:
-  python agent/chat.py
+  python agent/start_agent.py
 
 Requires: LLM (ollama local, or openai/gemini with API key).
 For router actions: Redis + Router process.

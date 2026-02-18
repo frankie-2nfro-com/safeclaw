@@ -17,6 +17,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.0.5] - 2026-02-18
+
+### Added
+- Add base agent class
+- Add channels to base agent class
+- Add console channel as default channel
+- Add telegram channel which is configurable in config.json
+
+### Changed
+- Refine class structure and channel structure
+- Refine utils function for llm and encapulate to base llm class
+- Refine logging for agent
+
+### Fixed
+- N/A
+
+---
+
 ## [1.0.4] - 2026-02-17
 
 ### Added

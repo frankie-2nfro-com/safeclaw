@@ -1,6 +1,7 @@
 import json
 import os
 import sys
+import threading
 import time
 import uuid
 from pathlib import Path
@@ -10,9 +11,8 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from libs.llm_client import chat as llm_chat
+from libs.logger import log
 from libs.remote_chrome_utils import dismiss_consent
-import threading
 from redis import Redis
 
 COMMAND_QUEUE = "safeclaw:command_queue"
@@ -78,13 +78,13 @@ class ActionExecutor:
             execution_message += f"PUSH ROUTER ACTION TO QUEUE: {self.action}\n"
             executed_successfully = True
             if result is None:
-                print("Timeout 10 seconds without any response!", flush=True)
+                log("Timeout 10 seconds without any response!")
 
         execution_message += f"--- Action Finished ---\n"
 
         if executed_successfully and result is not None: 
             execution_message += f"Execution Artifact: {result}\n"
-            print(execution_message)
+            log(execution_message.strip())
 
         return result
 
@@ -102,9 +102,9 @@ class ActionExecutor:
         try:
             r = self._get_redis()
             r.lpush(COMMAND_QUEUE, payload)
-            print(f"PUSH ROUTER ACTION TO QUEUE: {payload}")
+            log(f"PUSH ROUTER ACTION TO QUEUE: {payload}")
         except Exception as e:
-            print(f"Redis push error: {e}")
+            log(f"Redis push error: {e}")
 
     def _subscribe_to_response_queue(self, result_holder: list, message_id: str) -> None:
         """
@@ -115,15 +115,15 @@ class ActionExecutor:
         response_key = f"{RESPONSE_PREFIX}{message_id}"
         try:
             r = self._get_redis()
-            print(f"Waiting for response for 10 seconds...")
+            log("Waiting for response for 10 seconds...")
             # BLPOP blocks for up to 10 seconds
             blpop_result = r.blpop(response_key, timeout=10)
             if blpop_result:
-                print("*********RESPONSE_FOUND*************")
+                log("RESPONSE_FOUND")
                 _, raw = blpop_result
                 result_holder[0] = json.loads(raw)
         except Exception as e:
-            print(f"Redis subscribe error: {e}")
+            log(f"Redis subscribe error: {e}")
 
     # dynamic function : MEMORY_WRITE
     def _MEMORY_WRITE(self, params: dict):
@@ -202,11 +202,14 @@ class ActionExecutor:
 
         # use llm to summarize the content
         try:
+            from libs.base_llm import BaseLLM
+
             summary_prompt = "Summary in 100 words or less to the following content of a website body: \n" + content
-            output = llm_chat(summary_prompt)
+            llm = BaseLLM(workspace=self.workspace, provider=os.getenv("LLM_PROVIDER", "ollama"))
+            output = llm.chat(summary_prompt)
         except Exception as e:
             output = f"Error: {e}"
-            print("(Check LLM_PROVIDER and API key in .env)")
+            log("(Check LLM_PROVIDER and API key in .env)")
 
         return {
           "action": "_LLM_SUMMARY",
