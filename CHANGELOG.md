@@ -17,6 +17,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.0.10] - 2026-02-19
+
+### Added
+- N/A
+
+### Changed
+- N/A
+
+### Fixed
+- Channels should know typing state if input request is not in that channel
+
+---
+
 ## [1.0.9] - 2026-02-19
 
 ### Added

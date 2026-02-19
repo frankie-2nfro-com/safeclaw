@@ -3,9 +3,10 @@ Telegram channel. Pure I/O for Telegram bot.
 """
 import asyncio
 import sys
+import threading
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional, Set, Tuple
+from typing import Callable, Optional, Set, Tuple
 
 from telegram import Update
 from telegram.ext import Application, ContextTypes, MessageHandler, filters
@@ -81,6 +82,34 @@ class TelegramChannel(BaseChannel):
                     log(f"[Telegram broadcast] {e}")
         asyncio.run_coroutine_threadsafe(_send(), self._loop)
 
+    def start_typing(self) -> Optional[Callable[[], None]]:
+        """Start typing indicator for all broadcast chats (e.g. when Console is processing).
+        Returns a stop() callback to call when done. Typing also stops when a message is sent."""
+        if not self._loop or not self._application:
+            return None
+        chat_ids = self._target_chat_ids()
+        if not chat_ids:
+            return None
+        stop_event = threading.Event()
+
+        async def _keep_typing() -> None:
+            while not stop_event.is_set():
+                for chat_id in list(chat_ids):
+                    try:
+                        await self._application.bot.send_chat_action(chat_id=chat_id, action="typing")
+                    except Exception:
+                        pass
+                for _ in range(4):
+                    if stop_event.is_set():
+                        break
+                    await asyncio.sleep(1)
+
+        def stop() -> None:
+            stop_event.set()
+
+        asyncio.run_coroutine_threadsafe(_keep_typing(), self._loop)
+        return stop
+
     def receive(self) -> Tuple[str, str]:
         """Blocking receive (fallback). Telegram uses async callback instead."""
         return input("You: ").strip(), self.source_name
@@ -149,6 +178,7 @@ class TelegramChannel(BaseChannel):
                     await update.message.reply_text(f"Error: {e}")
                 except Exception:
                     pass
+            # Typing stops when reply_text is sent; ensure we always resume (success or timeout)
 
         app = Application.builder().token(self.bot_token).build()
         self._application = app

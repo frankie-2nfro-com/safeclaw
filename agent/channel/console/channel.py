@@ -41,6 +41,14 @@ class ConsoleChannel(BaseChannel):
             if user_input.lower() in ("quit", "exit", "q"):
                 break
             agent.broadcast_to_other_channels(user_input, exclude_source=source)
-            response = agent.process(user_input, source)
-            self.send(response)
-            agent.broadcast_response_to_other_channels(response, exclude_source=source)
+            stop_typing = agent.start_typing_except(source)
+            try:
+                response = agent.process(user_input, source)
+                self.send(response)
+                agent.broadcast_response_to_other_channels(response, exclude_source=source)
+            except Exception as e:
+                err_msg = f"Error: {e}"
+                self.send(err_msg)
+                agent.broadcast_response_to_other_channels(err_msg, exclude_source=source)
+            finally:
+                stop_typing()

@@ -94,22 +94,32 @@ class BaseAgent:
         provider = llm_cfg.get("provider") or os.getenv("LLM_PROVIDER", "ollama")
         model = llm_cfg.get("model") or os.getenv("LLM_MODEL", "llama3.1:8B")
         channel_names = [c.source_name for c in self.channels]
+        router_actions = []
+        try:
+            raw = (self.WORKSPACE / "router_actions.json").read_text(encoding="utf-8").strip()
+            if raw:
+                actions = json.loads(raw)
+                router_actions = [a.get("name", "") for a in actions if isinstance(a, dict) and a.get("name")]
+        except (json.JSONDecodeError, OSError):
+            pass
         dialog(f"SafeClaw Agent ({provider} + {model})")
         dialog("")
         dialog(f"Channels: {', '.join(channel_names)}")
+        dialog(f"Router Actions: {', '.join(router_actions)}" if router_actions else "Router Actions: (none)")
         dialog("")
 
     def run(self) -> None:
         """Run all channels. Telegram needs main thread (signal handlers); Console runs in thread."""
         if self._exit_clear:
             return
+        self.ensure_workspace_files()
         self.print_banner()
         # Telegram (and similar) must run in main thread - run_polling uses signal handlers
         telegram_ch = next((c for c in self.channels if c.source_name == "Telegram"), None)
         console_ch = next((c for c in self.channels if c.source_name == "Console"), None)
         if telegram_ch:
-            # Print Telegram status before Console prompt ("You: ")
-            dialog("Telegram bot running. Send a message to your bot.")
+            log("Telegram bot running.")
+            dialog("Send a message to your bot.")
             dialog("")
             if not getattr(telegram_ch, "_broadcast_chat_ids", set()):
                 dialog("Tip: To receive Console messages in Telegram, message the bot first or add broadcast_chat_ids to config.json (get chat ID from @userinfobot)")
@@ -135,6 +145,22 @@ class BaseAgent:
         for ch in self.channels:
             if ch.source_name != exclude_source:
                 ch.broadcast_response(response, exclude_source)
+
+    def start_typing_except(self, source: str):
+        """Start typing on channels that support it (e.g. Telegram) when another channel is processing.
+        Returns a stop() callback to call when done."""
+        stop_callbacks = []
+        for ch in self.channels:
+            if ch.source_name != source and hasattr(ch, "start_typing"):
+                stop = ch.start_typing()
+                if stop:
+                    stop_callbacks.append(stop)
+
+        def stop() -> None:
+            for cb in stop_callbacks:
+                cb()
+
+        return stop
 
     def process(self, user_input: str, source: str = "Console") -> str:
         """Process one turn. Returns response text."""
