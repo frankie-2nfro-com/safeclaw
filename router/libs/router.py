@@ -62,8 +62,8 @@ class Router:
         Route the command. Check config for allow-list/enabled, then load skill and execute().
         Returns result from skill.execute().
         """
-        skills_config = self.config.get("skills", {})
-        skill_config = skills_config.get(action, {})
+        skill_list = self.config.get("skill", [])
+        skill_config = next((s for s in skill_list if s.get("name") == action), {})
         if skill_config.get("enabled", True) is False:
             return {"status": "skipped", "reason": f"Skill {action} is disabled in config"}
         SkillClass = self._get_skill_class(action)
@@ -84,10 +84,16 @@ class Router:
             print(f"ERROR: Cannot connect to Redis: {e}")
             return 1
 
+        print()
+        enabled = [s["name"] for s in self.config.get("skill", []) if s.get("enabled", True)]
+        print("Enabled skills:", ", ".join(enabled) if enabled else "(none)")
+        print()
+
         command_queue = os.getenv("COMMAND_QUEUE", "safeclaw:command_queue")
         response_prefix = os.getenv("RESPONSE_PREFIX", "safeclaw:response:")
 
-        print(f"Router listening on {command_queue} (Ctrl+C to stop)\n")
+        print(f"Router listening on {command_queue} (Ctrl+C to stop)")
+        print()
         self._running = True
 
         def stop(sig, frame):

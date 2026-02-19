@@ -94,7 +94,10 @@ class BaseAgent:
         provider = llm_cfg.get("provider") or os.getenv("LLM_PROVIDER", "ollama")
         model = llm_cfg.get("model") or os.getenv("LLM_MODEL", "llama3.1:8B")
         channel_names = [c.source_name for c in self.channels]
-        dialog(f"SafeClaw Agent ({provider} + {model}), Channels: {', '.join(channel_names)}")
+        dialog(f"SafeClaw Agent ({provider} + {model})")
+        dialog("")
+        dialog(f"Channels: {', '.join(channel_names)}")
+        dialog("")
 
     def run(self) -> None:
         """Run all channels. Telegram needs main thread (signal handlers); Console runs in thread."""
@@ -106,7 +109,8 @@ class BaseAgent:
         console_ch = next((c for c in self.channels if c.source_name == "Console"), None)
         if telegram_ch:
             # Print Telegram status before Console prompt ("You: ")
-            dialog("Telegram bot running. Send a message to your bot.\n")
+            dialog("Telegram bot running. Send a message to your bot.")
+            dialog("")
             if not getattr(telegram_ch, "_broadcast_chat_ids", set()):
                 dialog("Tip: To receive Console messages in Telegram, message the bot first or add broadcast_chat_ids to config.json (get chat ID from @userinfobot)")
             # Run Console in background thread, Telegram in main

@@ -1,7 +1,5 @@
 {
-  "skills": {
-    "CREATE_POST": {
-      "enabled": true
-    }
-  }
+  "skill": [
+    { "name": "HELLO_WORLD", "enabled": true }
+  ]
 }
