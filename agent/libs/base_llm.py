@@ -176,6 +176,7 @@ class BaseLLM(ABC):
         try:
             message, actions = self._parse_response(output)
             response_parts = [message]
+            follow_up_results = []
 
             if actions:
                 from libs.action_executor import ActionExecutor
@@ -188,6 +189,7 @@ class BaseLLM(ABC):
                     except Exception as e:
                         response_parts.append(f"Error: {e}")
 
+                follow_up_results = []
                 for follow_info in artifact["data"]:
                     if (
                         follow_info.get("data")
@@ -198,17 +200,18 @@ class BaseLLM(ABC):
                             fu = follow_info["data"]["follow_up"]
                             executor = ActionExecutor(fu["name"], fu["params"], workspace=self.workspace)
                             result = executor.execute()
-                            response_parts.append(result.get("output", str(result)))
-                            input_history.append(
-                                {"follow_up_action": fu["name"], "response": result.get("output", "")}
-                            )
+                            output = result.get("output", str(result))
+                            response_parts.append(output)
+                            follow_up_results.append({"action": fu["name"], "output": output})
                         except Exception:
                             pass
 
-                artifact["follow_up_results"] = []
+                artifact["follow_up_results"] = follow_up_results
                 (self.workspace / "artifact.json").write_text(json.dumps(artifact, indent=2), encoding="utf-8")
 
             input_history.append({"user_input": user_input, "response": message})
+            for fu in follow_up_results:
+                input_history.append({"follow_up_action": fu["action"], "response": fu["output"]})
             if len(input_history) > 10:
                 input_history = input_history[-10:]
             (self.workspace / "input_history.json").write_text(

@@ -1,8 +1,8 @@
 {
-  "_MEMORY_WRITE": "memory_write",
-  "MEMORY_WRITE": "memory_write",
-  "_BROWSER_VISION": "browser_vision",
-  "BROWSER_VISION": "browser_vision",
-  "_LLM_SUMMARY": "llm_summary",
-  "LLM_SUMMARY": "llm_summary"
+  "_MEMORY_WRITE": {"ability": "memory_write", "class": "MemoryWriteAction"},
+  "MEMORY_WRITE": {"ability": "memory_write", "class": "MemoryWriteAction"},
+  "_BROWSER_VISION": {"ability": "browser_vision", "class": "BrowserVisionAction"},
+  "BROWSER_VISION": {"ability": "browser_vision", "class": "BrowserVisionAction"},
+  "_LLM_SUMMARY": {"ability": "llm_summary", "class": "LLMSummaryAction"},
+  "LLM_SUMMARY": {"ability": "llm_summary", "class": "LLMSummaryAction"}
 }

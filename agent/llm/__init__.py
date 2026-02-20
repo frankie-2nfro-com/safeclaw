@@ -1,7 +1,7 @@
 """
 LLM providers. Each subfolder (ollama, gemini, etc.) contains a provider-specific implementation.
 """
-from llm.base_llm import BaseLLM, LLMResponseError
+from libs.base_llm import BaseLLM, LLMResponseError
 
 
 def get_llm(workspace, provider: str = None, model: str = None) -> BaseLLM:

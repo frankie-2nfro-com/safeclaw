@@ -9,12 +9,14 @@ Self-contained agent actions. Each ability lives in its own folder and extends `
 Example:
 ```json
 {
-  "_MEMORY_WRITE": "memory_write",
-  "MEMORY_WRITE": "memory_write",
-  "_BROWSER_VISION": "browser_vision",
-  "BROWSER_VISION": "browser_vision"
+  "_MEMORY_WRITE": {"ability": "memory_write", "class": "MemoryWriteAction"},
+  "MEMORY_WRITE": {"ability": "memory_write", "class": "MemoryWriteAction"},
+  "_SEND_EMAIL": {"ability": "send_email", "class": "SendEmailAction"},
+  "SEND_EMAIL": {"ability": "send_email", "class": "SendEmailAction"}
 }
 ```
+
+Every entry uses `{"ability": "folder_name", "class": "ClassName"}`.
 
 ## Adding a new ability
 
@@ -24,8 +26,6 @@ Example:
 2. Add to `workspace/agent_action.json` (tool definition for the LLM).
 3. **Add to `ability/registry.json`**:
    ```json
-   "_SEND_EMAIL": "send_email",
-   "SEND_EMAIL": "send_email"
+   "_SEND_EMAIL": {"ability": "send_email", "class": "SendEmailAction"},
+   "SEND_EMAIL": {"ability": "send_email", "class": "SendEmailAction"}
    ```
-
-Convention: folder `send_email` → class `SendEmailAction` (PascalCase of folder + "Action").

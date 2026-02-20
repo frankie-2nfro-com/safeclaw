@@ -1,10 +1,10 @@
 """Browser vision: capture webpage via remote Chrome."""
 import os
-import time
 from pathlib import Path
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
 
 from libs.base_agent_action import BaseAgentAction
 from libs.remote_chrome_utils import dismiss_consent
@@ -12,6 +12,8 @@ from libs.remote_chrome_utils import dismiss_consent
 
 class BrowserVisionAction(BaseAgentAction):
     """Capture webpage: screenshot, HTML, and body text."""
+
+    PAGE_LOAD_TIMEOUT = 10
 
     def execute(self):
         url = self.params["url"]
@@ -24,8 +26,9 @@ class BrowserVisionAction(BaseAgentAction):
         )
         try:
             driver.get(url)
+            self._wait_for_page_ready(driver)
             dismiss_consent(driver)
-            time.sleep(3)
+            self._wait_for_page_ready(driver)
 
             output_dir = self.workspace / "output"
             output_dir.mkdir(parents=True, exist_ok=True)
@@ -55,3 +58,11 @@ class BrowserVisionAction(BaseAgentAction):
                 "params": {"content": str(txt_path)},
             },
         }
+
+    def _wait_for_page_ready(self, driver, timeout: int = None) -> None:
+        """Wait for document.readyState == 'complete'. Returns immediately if already ready."""
+        if timeout is None:
+            timeout = self.PAGE_LOAD_TIMEOUT
+        def ready(d):
+            return d.execute_script("return document.readyState") == "complete"
+        WebDriverWait(driver, timeout).until(ready)

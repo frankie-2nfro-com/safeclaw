@@ -17,6 +17,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.0.12] - 2026-02-20
+
+### Added
+- (add changes here)
+
+### Changed
+- Move base llm class to libs instead in llm folder 
+
+### Fixed
+- Follow-up action not working
+
+---
+
 ## [1.0.11] - 2026-02-20
 
 ### Added

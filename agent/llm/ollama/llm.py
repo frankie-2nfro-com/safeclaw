@@ -6,7 +6,7 @@ from typing import Optional
 
 import ollama
 
-from llm.base_llm import BaseLLM
+from libs.base_llm import BaseLLM
 
 
 class OllamaLLM(BaseLLM):
