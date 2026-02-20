@@ -4,6 +4,7 @@ Console channel. stdin/stdout I/O.
 from typing import Tuple
 
 from libs.base_channel import BaseChannel
+from libs.command import COMMANDS, run_command, usage
 
 
 class ConsoleChannel(BaseChannel):
@@ -34,12 +35,24 @@ class ConsoleChannel(BaseChannel):
     def run(self, agent) -> None:
         """Blocking loop: receive -> process -> send."""
         agent._ensure_ready()
+        cmd_names = [name for name, _ in COMMANDS]
         while True:
             user_input, source = self.receive()
             if not user_input:
                 continue
             if user_input.lower() in ("quit", "exit", "q"):
                 break
+            # Handle /commands (e.g. /whoami, /memory, /soul)
+            stripped = user_input.strip().lower()
+            if stripped.startswith("/"):
+                cmd_name = stripped[1:].strip().split()[0] if stripped[1:].strip() else ""
+                if cmd_name in cmd_names:
+                    response = run_command(cmd_name, agent.WORKSPACE, source="Console")
+                    if response:
+                        self.send(response)
+                else:
+                    self.send("Invalid command.\n\n" + usage())
+                continue
             agent.broadcast_to_other_channels(user_input, exclude_source=source)
             stop_typing = agent.start_typing_except(source)
             try:

@@ -30,6 +30,7 @@ agent/
 │   ├── base_agent_action.py  # Base class for agent abilities (abstract execute())
 │   ├── base_llm.py          # BaseLLM: prompt, parse, process_turn. Provider subclasses implement chat()
 │   ├── action_executor.py   # ActionExecutor: maps action -> ability, runs locally or pushes router
+│   ├── command.py           # Channel commands: whoami, memory, soul. Channels call run_command().
 │   └── remote_chrome_utils.py  # dismiss_consent() for BROWSER_VISION
 │
 ├── ability/                  # Self-contained agent actions (one folder per action)
@@ -102,7 +103,16 @@ COMPONENTS
    - run_interactive(key): Interactive prompts for config keys (timeout, llm)
    - Usage: ./start_agent.py config timeout | ./start_agent.py config llm
 
-6. libs/remote_chrome_utils.py
+6. libs/command.py (channel commands)
+   - whoami(source, chat_id), memory(workspace), soul(workspace): return response strings
+   - run_command(name, workspace, source, chat_id=None): dispatch by name
+   - COMMANDS: list of (name, description) for registration
+   - usage(): returns "Available commands: /whoami - ..., /memory - ..., /soul - ..."
+   - Console: /whoami, /memory, /soul; invalid /xx shows "Invalid command" + usage
+   - Telegram: CommandHandler for each; set_my_commands() on startup
+   - Adding a command: add function, add to run_command(), append to COMMANDS
+
+7. libs/remote_chrome_utils.py
    - dismiss_consent(driver): Clicks cookie/consent buttons before screenshot
 
 
@@ -212,6 +222,11 @@ Commands:
   ./start_agent.py           - Start the agent
   ./start_agent.py clear    - Clear workspace (artifact, input_history, log, output/)
   ./start_agent.py config [key] - Interactive config. Keys: timeout, llm
+
+Channel commands (Console and Telegram):
+  /whoami  - Show channel and chat ID (Telegram) or "You are using console"
+  /memory  - Show current memory.json content
+  /soul    - Show agent identity (SOUL.md)
 
 Requires: LLM (ollama local, or openai/gemini with API key).
 For router actions: Redis + Router process.

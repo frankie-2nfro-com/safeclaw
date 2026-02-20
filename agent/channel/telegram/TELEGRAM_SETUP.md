@@ -21,7 +21,7 @@ Edit `config.json`:
 
 1. Set `"enabled": true`
 2. Set `"bot_token": "YOUR_TOKEN_FROM_BOTFATHER"`
-3. Add your chat ID to `"broadcast_chat_ids": [123456789]` — get it from [@userinfobot](https://t.me/userinfobot). This lets you receive Console messages and responses in Telegram.
+3. Add your chat ID to `"broadcast_chat_ids": [123456789]` — get it via `/whoami` in your bot or [@userinfobot](https://t.me/userinfobot). This lets you receive Console messages and responses in Telegram.
 
 ```json
 {
@@ -57,7 +57,19 @@ python start_agent.py
 
 The bot will start polling. Open Telegram, find your bot, send a message. SafeClaw will reply.
 
-## 5. Flow
+## 5. Commands
+
+Type `/` in the chat to see available commands:
+
+| Command   | Description                          |
+|-----------|--------------------------------------|
+| `/whoami` | Show your chat ID (for broadcast_chat_ids) |
+| `/memory` | Show current memory content          |
+| `/soul`   | Show agent identity and beliefs      |
+
+Use `/whoami` to get your chat ID instead of @userinfobot if you prefer.
+
+## 6. Flow
 
 ```
 You (Telegram)  →  Bot receives message  →  Agent (LLM + actions)  →  Bot sends reply

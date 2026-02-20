@@ -45,6 +45,7 @@ agent/
     agent_config.py    # AgentConfig: load config, interactive prompts
     base_llm.py        # BaseLLM: prompt, parse, process_turn
     action_executor.py
+    command.py         # Channel commands: /whoami, /memory, /soul (Console, Telegram)
     remote_chrome_utils.py
   ability/            # Agent actions (memory_write, browser_vision, llm_summary)
     registry.json     # Maps action name -> ability folder (edit when adding abilities)
@@ -69,4 +70,12 @@ agent/
    "MY_ACTION": {"ability": "my_action", "class": "MyActionAction"}
    ```
 
-See agent_design_details.txt for full design documentation.
+## Channel commands
+
+In Console or Telegram, type `/` for system commands:
+
+- `/whoami` — Show channel and chat ID
+- `/memory` — Show current memory
+- `/soul` — Show agent identity (SOUL.md)
+
+Command logic lives in `libs/command.py`; channels call `run_command()`. See agent_design_details.txt for full design documentation.
