@@ -1,8 +1,11 @@
 """
-Channel commands: whoami, memory, soul.
+Channel commands: whoami, memory, soul, restart.
 Logic lives here; channels call these and send the response to the user.
 """
 import json
+import os
+import subprocess
+import sys
 from pathlib import Path
 from typing import List, Optional, Tuple
 
@@ -10,6 +13,7 @@ COMMANDS: List[Tuple[str, str]] = [
     ("whoami", "Show your chat ID"),
     ("memory", "Show current memory"),
     ("soul", "Show agent identity and beliefs"),
+    ("restart", "Restart the agent"),
 ]
 
 
@@ -59,6 +63,30 @@ def soul(workspace: Path) -> str:
         return f"Error reading soul: {e}"
 
 
+def restart(workspace: Path) -> str:
+    """Return restart message. Call perform_restart() after sending to user."""
+    return "Restarting agent..."
+
+
+def perform_restart(workspace: Path) -> None:
+    """
+    Spawn new agent process and exit. Never returns.
+    Call after sending restart message to user.
+    """
+    agent_dir = workspace.parent
+    start_script = agent_dir / "start_agent.py"
+    if not start_script.exists():
+        # Fallback: try from project root
+        start_script = agent_dir.parent / "agent" / "start_agent.py"
+        agent_dir = start_script.parent
+    subprocess.Popen(
+        [sys.executable, str(start_script)],
+        cwd=str(agent_dir),
+        start_new_session=True,
+    )
+    os._exit(0)
+
+
 def run_command(
     name: str, workspace: Path, source: str, chat_id: Optional[int] = None
 ) -> Optional[str]:
@@ -73,4 +101,6 @@ def run_command(
         return memory(workspace)
     if name == "soul":
         return soul(workspace)
+    if name == "restart":
+        return restart(workspace)
     return None

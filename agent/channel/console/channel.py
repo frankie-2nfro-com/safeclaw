@@ -4,7 +4,7 @@ Console channel. stdin/stdout I/O.
 from typing import Tuple
 
 from libs.base_channel import BaseChannel
-from libs.command import COMMANDS, run_command, usage
+from libs.command import COMMANDS, perform_restart, run_command, usage
 
 
 class ConsoleChannel(BaseChannel):
@@ -50,6 +50,8 @@ class ConsoleChannel(BaseChannel):
                     response = run_command(cmd_name, agent.WORKSPACE, source="Console")
                     if response:
                         self.send(response)
+                        if cmd_name == "restart":
+                            perform_restart(agent.WORKSPACE)
                 else:
                     self.send("Invalid command.\n\n" + usage())
                 continue

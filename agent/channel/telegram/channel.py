@@ -12,7 +12,7 @@ from telegram import BotCommand, Update
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 
 from libs.base_channel import BaseChannel
-from libs.command import COMMANDS, run_command
+from libs.command import COMMANDS, perform_restart, run_command
 from libs.logger import dialog, log
 
 CHANNEL_DIR = Path(__file__).resolve().parent.parent
@@ -188,6 +188,8 @@ class TelegramChannel(BaseChannel):
             text = run_command(cmd_name, agent.WORKSPACE, source="Telegram", chat_id=chat_id)
             if text:
                 await update.message.reply_text(text[:4096])
+                if cmd_name == "restart":
+                    perform_restart(agent.WORKSPACE)
 
         async def post_init(app: Application) -> None:
             await app.bot.delete_my_commands()

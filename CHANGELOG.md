@@ -17,6 +17,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.0.21] - 2026-02-20
+
+### Added
+- /restart command to allow to restart the server (use for changing settings or configuration)
+
+---
+
 ## [1.0.20] - 2026-02-20
 
 ### Added
