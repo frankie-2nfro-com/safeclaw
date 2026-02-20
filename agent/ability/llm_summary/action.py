@@ -11,7 +11,13 @@ class LLMSummaryAction(BaseAgentAction):
     """Summarize content file using LLM."""
 
     def execute(self):
-        content_file = self.params["content"]
+        content_file = self.params.get("content")
+        if not content_file:
+            return {
+                "action": "_LLM_SUMMARY",
+                "error": "Missing 'content' param (path to file). Use artifact content path.",
+                "status": "failed",
+            }
         path = Path(content_file)
         if not path.is_absolute():
             path = self.workspace / "output" / path.name

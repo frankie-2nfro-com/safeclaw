@@ -1,6 +1,7 @@
 """Browser vision: capture webpage via remote Chrome."""
 import base64
 import os
+from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -67,26 +68,24 @@ class BrowserVisionAction(BaseAgentAction):
 
             output_dir = self.workspace / "output"
             output_dir.mkdir(parents=True, exist_ok=True)
+            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+            base_name = f"browser_vision_{ts}"
 
             html = driver.page_source
-            html_path = output_dir / "browser_vision.html"
+            html_path = output_dir / f"{base_name}.html"
             html_path.write_text(html, encoding="utf-8")
 
             screenshot = self._capture_screenshot(driver, full_page)
-            png_path = output_dir / "browser_vision.png"
+            png_path = output_dir / f"{base_name}.png"
             png_path.write_bytes(screenshot)
 
             content = driver.find_element(By.TAG_NAME, "body").text
-            txt_path = output_dir / "browser_vision.txt"
+            txt_path = output_dir / f"{base_name}.txt"
             txt_path.write_text(content, encoding="utf-8")
 
             return {
                 "action": "_BROWSER_VISION",
                 "url": url,
-                "full_page": full_page,
-                "headless": headless,
-                "width": width,
-                "height": height,
                 "html": str(html_path),
                 "screenshot": str(png_path),
                 "content": str(txt_path),

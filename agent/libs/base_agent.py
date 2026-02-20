@@ -5,6 +5,7 @@ On startup: load config.json (clone from config_initial.json if missing), use ll
 """
 import json
 import os
+import shutil
 import sys
 import threading
 from pathlib import Path
@@ -191,7 +192,7 @@ class BaseAgent:
 
     @classmethod
     def clear_workspace(cls) -> None:
-        """Reset artifact.json, input_history.json, and clear log file."""
+        """Reset artifact.json, input_history.json, clear log file, and remove workspace/output/."""
         cls.WORKSPACE.mkdir(parents=True, exist_ok=True)
         with open(cls.WORKSPACE / "artifact.json", "w", encoding="utf-8") as f:
             json.dump({}, f, indent=2)
@@ -199,4 +200,8 @@ class BaseAgent:
             json.dump([], f, indent=2)
         if LOG_PATH.exists():
             LOG_PATH.write_text("", encoding="utf-8")
-        print("Cleared artifact.json, input_history.json, and system.log", flush=True)
+        output_dir = cls.WORKSPACE / "output"
+        if output_dir.exists():
+            shutil.rmtree(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        print("Cleared artifact.json, input_history.json, system.log, and workspace/output/", flush=True)

@@ -14,5 +14,3 @@ Content extraction
 .text can miss content in iframes, shadow DOM, or dynamic content.
 Improvement: Extract from iframes, or use a more robust extraction method (e.g. readability-style).
 
-Single output filename
-Always overwrites browser_vision.*, so multiple URLs in one run overwrite each other.

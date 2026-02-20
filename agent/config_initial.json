@@ -11,5 +11,6 @@
       "broadcast_chat_ids": []
     }
   ],
-  "timeout": 10
+  "timeout": 10, 
+  "thinking": true
 }

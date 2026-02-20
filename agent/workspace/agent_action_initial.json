@@ -11,15 +11,15 @@
     "instruction": "Use this for ANY request to see, read, or get information from a website (including headlines, news, or summaries).",
     "params": {
       "url": "string",
-      "full_page": true, 
+      "full_page": true,
       "headless": false
     }
-  }, 
+  },
   {
     "name": "_LLM_SUMMARY",
     "instruction": "Use this for ANY request to summarize any text or content in the artifact.",
     "params": {
-      "url": "string"
+      "content": "path to content file from artifact"
     }
   }
 ]

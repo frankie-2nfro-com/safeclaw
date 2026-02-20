@@ -210,7 +210,7 @@ Or from project root:
 
 Commands:
   ./start_agent.py           - Start the agent
-  ./start_agent.py clear    - Clear workspace (artifact, input_history, log)
+  ./start_agent.py clear    - Clear workspace (artifact, input_history, log, output/)
   ./start_agent.py config [key] - Interactive config. Keys: timeout, llm
 
 Requires: LLM (ollama local, or openai/gemini with API key).

@@ -181,11 +181,20 @@ class BaseLLM(ABC):
             if actions:
                 from libs.action_executor import ActionExecutor
                 artifact = {"timestamp": datetime.now().isoformat(), "data": []}
+                PARAM_KEYS = {"full_page", "headless", "width", "height"}
+
+                def _strip_params(d):
+                    if isinstance(d, dict):
+                        return {k: _strip_params(v) for k, v in d.items() if k not in PARAM_KEYS}
+                    if isinstance(d, list):
+                        return [_strip_params(x) for x in d]
+                    return d
+
                 for action in actions:
                     try:
                         executor = ActionExecutor(action["name"], action["params"], workspace=self.workspace)
                         executed_result = executor.execute()
-                        artifact["data"].append({"data": executed_result})
+                        artifact["data"].append({"data": _strip_params(executed_result)})
                     except Exception as e:
                         response_parts.append(f"Error: {e}")
 
@@ -207,9 +216,21 @@ class BaseLLM(ABC):
                             pass
 
                 artifact["follow_up_results"] = follow_up_results
-                (self.workspace / "artifact.json").write_text(json.dumps(artifact, indent=2), encoding="utf-8")
+                meaningful_data = [x for x in artifact["data"] if x.get("data") is not None]
+                if meaningful_data:
+                    artifact_to_save = {
+                        "timestamp": artifact["timestamp"],
+                        "data": meaningful_data,
+                        "follow_up_results": follow_up_results,
+                    }
+                    (self.workspace / "artifact.json").write_text(json.dumps(artifact_to_save, indent=2), encoding="utf-8")
 
-            input_history.append({"user_input": user_input, "response": message})
+            entry = {"user_input": user_input, "response": message}
+            if actions:
+                meaningful_output = [x for x in artifact["data"] if x.get("data") is not None]
+                if meaningful_output:
+                    entry["output"] = {"data": meaningful_output}
+            input_history.append(entry)
             for fu in follow_up_results:
                 input_history.append({"follow_up_action": fu["action"], "response": fu["output"]})
             if len(input_history) > 10:

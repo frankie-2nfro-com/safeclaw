@@ -17,6 +17,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.0.14] - 2026-02-20
+
+### Added
+- N/A
+
+### Changed
+- Artifct and output files update for Browser Vision
+
+### Fixed
+- N/A
+
+---
+
 ## [1.0.13] - 2026-02-20
 
 ### Added
