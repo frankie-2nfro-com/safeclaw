@@ -168,10 +168,24 @@ class BaseLLM(ABC):
         if not prompt:
             return "(Empty prompt, skipping)"
 
+        # Log Q immediately (when user asked)
+        llm_log_path = self._root / "logs" / "llm.log"
+        llm_log_path.parent.mkdir(parents=True, exist_ok=True)
+        ts_q = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        with open(llm_log_path, "a", encoding="utf-8") as f:
+            f.write(f"{ts_q} Q: {user_input}\n")
+
         try:
             output = self.chat(prompt)
         except Exception as e:
             return self._format_chat_error(e)
+
+        # Log A when LLM responds (collapse newlines between text and <tool_code>)
+        ts_a = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        output_for_log = re.sub(r"\s+<tool_code>", " <tool_code>", output)
+        with open(llm_log_path, "a", encoding="utf-8") as f:
+            f.write(f"{ts_a} A: {output_for_log}\n")
+            f.write("\n")
 
         try:
             message, actions = self._parse_response(output)

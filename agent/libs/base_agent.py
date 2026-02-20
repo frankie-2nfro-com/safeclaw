@@ -200,8 +200,11 @@ class BaseAgent:
             json.dump([], f, indent=2)
         if LOG_PATH.exists():
             LOG_PATH.write_text("", encoding="utf-8")
+        llm_log = LOG_PATH.parent / "llm.log"
+        if llm_log.exists():
+            llm_log.write_text("", encoding="utf-8")
         output_dir = cls.WORKSPACE / "output"
         if output_dir.exists():
             shutil.rmtree(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
-        print("Cleared artifact.json, input_history.json, system.log, and workspace/output/", flush=True)
+        print("Cleared artifact.json, input_history.json, system.log, llm.log, and workspace/output/", flush=True)

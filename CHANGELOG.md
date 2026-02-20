@@ -17,6 +17,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.0.17] - 2026-02-20
+
+### Added
+- llm.log to log down user input and llm raw response
+
+---
+
 ## [1.0.16] - 2026-02-20
 
 ### Fixed
