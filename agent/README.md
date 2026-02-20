@@ -45,6 +45,8 @@ agent/
     agent_config.py    # AgentConfig: load config, interactive prompts
     action_executor.py
     remote_chrome_utils.py
+  ability/            # Agent actions (memory_write, browser_vision, llm_summary)
+    registry.json     # Maps action name -> ability folder (edit when adding abilities)
   llm/             # LLM providers (ollama, openai, gemini)
     base_llm.py
     ollama/llm.py
@@ -56,5 +58,16 @@ agent/
     PROMPT.md
     ...
 ```
+
+## Adding a new ability
+
+1. Add entry to `workspace/agent_action.json` (name, instruction, params).
+2. Create `ability/{folder}/` with `__init__.py` and `action.py` extending `BaseAgentAction`.
+3. **Add mapping to `ability/registry.json`** (required):
+   ```json
+   "_MY_ACTION": "my_action",
+   "MY_ACTION": "my_action"
+   ```
+   Convention: folder `my_action` → class `MyActionAction` in `action.py` (PascalCase + "Action").
 
 See agent_design_details.txt for full design documentation.

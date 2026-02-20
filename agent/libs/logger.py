@@ -9,7 +9,7 @@ LOG_PATH = Path(__file__).resolve().parent.parent / "logs" / "system.log"
 _configured = False
 
 
-def setup():
+def logging_setup():
     """Configure logging to logs/system.log. Idempotent."""
     global _configured
     if _configured:
@@ -27,12 +27,12 @@ def setup():
 
 def log(msg: str, level: str = "info") -> None:
     """Log to system.log. Does not print to console."""
-    setup()
+    logging_setup()
     getattr(logging, level.lower())(msg)
 
 
 def dialog(msg: str) -> None:
     """Log to system.log AND print to console (part of chat dialog)."""
-    setup()
+    logging_setup()
     logging.info(msg)
     print(msg, flush=True)

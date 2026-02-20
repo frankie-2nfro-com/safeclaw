@@ -26,9 +26,23 @@ agent/
 ├── agent_design_details.txt
 │
 ├── libs/
-│   ├── agent_config.py     # AgentConfig: load config, interactive prompts (./start_agent.py config <key>)
-│   ├── action_executor.py  # ActionExecutor: runs agent actions, pushes router actions
+│   ├── agent_config.py       # AgentConfig: load config, interactive prompts (./start_agent.py config <key>)
+│   ├── base_agent_action.py  # Base class for agent abilities (abstract execute())
+│   ├── action_executor.py   # ActionExecutor: maps action -> ability, runs locally or pushes router
 │   └── remote_chrome_utils.py  # dismiss_consent() for BROWSER_VISION
+│
+├── ability/                  # Self-contained agent actions (one folder per action)
+│   ├── __init__.py          # get_action_class() - loads from registry.json
+│   ├── registry.json        # Maps action name -> ability folder (edit when adding abilities)
+│   ├── memory_write/        # _MEMORY_WRITE
+│   │   ├── __init__.py
+│   │   └── action.py
+│   ├── browser_vision/      # _BROWSER_VISION
+│   │   ├── __init__.py
+│   │   └── action.py
+│   └── llm_summary/         # _LLM_SUMMARY
+│       ├── __init__.py
+│       └── action.py
 │
 ├── llm/                     # LLM providers (like channel structure)
 │   ├── base_llm.py         # BaseLLM: prompt, parse, process_turn. Subclasses implement chat()
@@ -78,9 +92,9 @@ COMPONENTS
 
 4. libs/action_executor.py (ActionExecutor)
    - execute() branches:
-     A) AGENT ACTION: Has method _ACTION_NAME -> run locally
-     B) ROUTER ACTION: No local method -> push to Redis, BLPOP response (timeout from config.json)
-   - Agent actions: _MEMORY_WRITE, _BROWSER_VISION, _LLM_SUMMARY
+     A) AGENT ACTION: get_action_class(action) returns class -> instantiate, run execute()
+     B) ROUTER ACTION: No class in registry -> push to Redis, BLPOP response (timeout from config.json)
+   - Agent actions live in ability/ (memory_write, browser_vision, llm_summary)
    - Router actions: any name in router_actions.json (e.g. CREATE_POST)
 
 5. libs/agent_config.py (AgentConfig)
@@ -168,8 +182,14 @@ ADDING A NEW AGENT ACTION
 -------------------------
 
 1. Add entry to workspace/agent_action.json with name, instruction, params schema.
-2. Add method _ACTION_NAME(self, params) to libs/action_executor.py.
-3. Return dict (merged into artifact).
+2. Create ability/{action_folder}/ (e.g. ability/send_email/):
+   - __init__.py: export ActionClass (e.g. SendEmailAction)
+   - action.py: class SendEmailAction(BaseAgentAction), implement execute() -> dict
+3. Add mapping to ability/registry.json:
+     "_SEND_EMAIL": "send_email",
+     "SEND_EMAIL": "send_email"
+   Convention: folder name = lowercase with underscores; class name = PascalCase + "Action"
+4. Return dict from execute() (merged into artifact).
 
 
 ADDING A NEW ROUTER ACTION

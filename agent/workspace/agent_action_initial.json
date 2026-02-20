@@ -12,5 +12,12 @@
     "params": {
       "url": "string"
     }
+  }, 
+  {
+    "name": "_LLM_SUMMARY",
+    "instruction": "Use this for ANY request to summarize any text or content in the artifact.",
+    "params": {
+      "url": "string"
+    }
   }
 ]

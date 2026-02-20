@@ -8,7 +8,7 @@ from typing import Optional
 
 from dotenv import load_dotenv
 
-from libs.logger import setup
+from libs.logger import logging_setup
 
 AGENT_DIR = Path(__file__).resolve().parent.parent
 CONFIG_PATH = AGENT_DIR / "config.json"
@@ -60,7 +60,7 @@ class AgentConfig:
         if not config_key:
             return
         load_dotenv()
-        setup()
+        logging_setup()
         config = self.load_config()
         key = config_key.lower()
         if key not in CONFIG_PROMPTS:

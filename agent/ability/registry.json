@@ -1,0 +1,8 @@
+{
+  "_MEMORY_WRITE": "memory_write",
+  "MEMORY_WRITE": "memory_write",
+  "_BROWSER_VISION": "browser_vision",
+  "BROWSER_VISION": "browser_vision",
+  "_LLM_SUMMARY": "llm_summary",
+  "LLM_SUMMARY": "llm_summary"
+}

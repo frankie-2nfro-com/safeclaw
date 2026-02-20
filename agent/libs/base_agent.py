@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 
 from channel.console.channel import ConsoleChannel
 from libs.agent_config import AgentConfig
-from libs.logger import LOG_PATH, dialog, log, setup
+from libs.logger import LOG_PATH, dialog, log, logging_setup
 from channel.telegram.channel import TelegramChannel
 from llm import get_llm
 
@@ -22,6 +22,7 @@ from llm import get_llm
 class BaseAgent:
     """Agent with channels. Console is always loaded; others from config."""
 
+    # Agent variables
     AGENT_DIR = Path(__file__).resolve().parent.parent
     WORKSPACE = AGENT_DIR / "workspace"
 
@@ -40,18 +41,15 @@ class BaseAgent:
     CONFIG_PATH = AGENT_DIR / "config.json"
     CONFIG_INITIAL_PATH = AGENT_DIR / "config_initial.json"
 
-    @classmethod
-    def load_config(cls) -> dict:
-        """Load config.json. If missing, clone from config_initial.json first."""
-        return AgentConfig.load_config()
 
+    # Constructor
     def __init__(self, config: Optional[dict] = None, console_monitor: bool = True):
         """
         Read argv, load config, build channels. If argv has 'clear', clear workspace and set _exit_clear.
         config: optional override; if None, load from config.json (cloned from config_initial.json if missing).
         """
         load_dotenv()
-        setup()
+        logging_setup()
         self._exit_clear = False
         if len(sys.argv) > 1 and sys.argv[1].lower() == "clear":
             self.clear_workspace()
@@ -69,6 +67,14 @@ class BaseAgent:
         self._llm = None
         self._provider = None
 
+
+
+    @classmethod
+    def load_config(cls) -> dict:
+        """Load config.json. If missing, clone from config_initial.json first."""
+        return AgentConfig.load_config()
+
+    
     def _build_channels(self) -> List:
         """Build channels: ConsoleChannel (always) + others from config."""
         channels = [ConsoleChannel()]

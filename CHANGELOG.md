@@ -17,6 +17,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.0.11] - 2026-02-20
+
+### Added
+- Agent action decoupling with action_executor. It will put in ability folder
+- Base classs of agent action 
+
+### Changed
+- Dynamic map agent action in ability class
+
+### Fixed
+- (add fixes here)
+
+---
+
 ## [1.0.10] - 2026-02-19
 
 ### Added
