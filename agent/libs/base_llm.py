@@ -215,14 +215,14 @@ class BaseLLM(ABC):
                         except Exception:
                             pass
 
-                artifact["follow_up_results"] = follow_up_results
                 meaningful_data = [x for x in artifact["data"] if x.get("data") is not None]
                 if meaningful_data:
                     artifact_to_save = {
                         "timestamp": artifact["timestamp"],
                         "data": meaningful_data,
-                        "follow_up_results": follow_up_results,
                     }
+                    if follow_up_results:
+                        artifact_to_save["follow_up_results"] = follow_up_results
                     (self.workspace / "artifact.json").write_text(json.dumps(artifact_to_save, indent=2), encoding="utf-8")
 
             entry = {"user_input": user_input, "response": message}
