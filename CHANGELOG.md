@@ -17,6 +17,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.0.19] - 2026-02-20
+
+### Added
+- Commands of telegram bot
+
+### Changed
+- Add mechanism to handle command in telegram including (/whoami, /memory, /soul)
+
+---
+
 ## [1.0.18] - 2026-02-20
 
 ### Added

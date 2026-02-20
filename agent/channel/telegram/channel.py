@@ -2,14 +2,15 @@
 Telegram channel. Pure I/O for Telegram bot.
 """
 import asyncio
+import json
 import sys
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Optional, Set, Tuple
 
-from telegram import Update
-from telegram.ext import Application, ContextTypes, MessageHandler, filters
+from telegram import BotCommand, Update
+from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 
 from libs.base_channel import BaseChannel
 from libs.logger import dialog, log
@@ -180,7 +181,69 @@ class TelegramChannel(BaseChannel):
                     pass
             # Typing stops when reply_text is sent; ensure we always resume (success or timeout)
 
-        app = Application.builder().token(self.bot_token).build()
+        async def cmd_whoami(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+            chat_id = update.effective_chat.id if update.effective_chat else None
+            if chat_id is not None:
+                self._chat_ids.add(chat_id)
+            text = f"Your chat ID: {chat_id}" if chat_id is not None else "Could not get chat ID"
+            await update.message.reply_text(text)
+
+        async def cmd_memory(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+            chat_id = update.effective_chat.id if update.effective_chat else None
+            if chat_id is not None:
+                self._chat_ids.add(chat_id)
+            path = agent.WORKSPACE / "memory.json"
+            if not path.exists():
+                await update.message.reply_text("(No memory)")
+                return
+            try:
+                raw = path.read_text(encoding="utf-8").strip()
+                data = json.loads(raw) if raw else {}
+                if not isinstance(data, dict):
+                    data = {}
+                if not data:
+                    await update.message.reply_text("(Empty memory)")
+                    return
+                lines = [f"• {k}: {v}" for k, v in data.items()]
+                text = "Memory:\n" + "\n".join(lines)
+                await update.message.reply_text(text[:4096])
+            except Exception as e:
+                await update.message.reply_text(f"Error reading memory: {e}")
+
+        async def cmd_soul(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+            chat_id = update.effective_chat.id if update.effective_chat else None
+            if chat_id is not None:
+                self._chat_ids.add(chat_id)
+            path = agent.WORKSPACE / "SOUL.md"
+            if not path.exists():
+                await update.message.reply_text("(No soul)")
+                return
+            try:
+                text = path.read_text(encoding="utf-8").strip()
+                if not text:
+                    await update.message.reply_text("(Empty soul)")
+                    return
+                await update.message.reply_text(text[:4096])
+            except Exception as e:
+                await update.message.reply_text(f"Error reading soul: {e}")
+
+        async def post_init(app: Application) -> None:
+            await app.bot.delete_my_commands()
+            await app.bot.set_my_commands([
+                BotCommand("whoami", "Show your chat ID"),
+                BotCommand("memory", "Show current memory"),
+                BotCommand("soul", "Show agent identity and beliefs"),
+            ])
+
+        app = (
+            Application.builder()
+            .token(self.bot_token)
+            .post_init(post_init)
+            .build()
+        )
         self._application = app
+        app.add_handler(CommandHandler("whoami", cmd_whoami))
+        app.add_handler(CommandHandler("memory", cmd_memory))
+        app.add_handler(CommandHandler("soul", cmd_soul))
         app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
         app.run_polling(allowed_updates=Update.ALL_TYPES)
