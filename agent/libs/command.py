@@ -4,7 +4,6 @@ Logic lives here; channels call these and send the response to the user.
 """
 import json
 import os
-import subprocess
 import sys
 from pathlib import Path
 from typing import List, Optional, Tuple
@@ -70,21 +69,17 @@ def restart(workspace: Path) -> str:
 
 def perform_restart(workspace: Path) -> None:
     """
-    Spawn new agent process and exit. Never returns.
-    Call after sending restart message to user.
+    Restart the agent by re-execing. Replaces current process in-place,
+    preserving stdin/stdout - avoids keystroke splitting.
+    Never returns.
     """
     agent_dir = workspace.parent
-    start_script = agent_dir / "start_agent.py"
-    if not start_script.exists():
-        # Fallback: try from project root
-        start_script = agent_dir.parent / "agent" / "start_agent.py"
-        agent_dir = start_script.parent
-    subprocess.Popen(
-        [sys.executable, str(start_script)],
-        cwd=str(agent_dir),
-        start_new_session=True,
-    )
-    os._exit(0)
+    script = agent_dir / "start_agent.py"
+    if not script.exists():
+        script = agent_dir.parent / "agent" / "start_agent.py"
+        agent_dir = script.parent
+    os.chdir(agent_dir)
+    os.execv(sys.executable, [sys.executable, str(script)] + sys.argv[1:])
 
 
 def run_command(

@@ -113,6 +113,7 @@ class BaseAgent:
         dialog("")
         dialog(f"Channels: {', '.join(channel_names)}")
         dialog(f"Router Actions: {', '.join(router_actions)}" if router_actions else "Router Actions: (none)")
+        dialog("Tip: /restart to restart the agent.")
         dialog("")
 
     def run(self) -> None:
