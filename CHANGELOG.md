@@ -17,6 +17,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.0.18] - 2026-02-20
+
+### Added
+- "thinking" settings in config.json in agent
+
+### Changed
+- if "thinking" is enabled, show the processing message so that user can see what is happening
+
+---
+
 ## [1.0.17] - 2026-02-20
 
 ### Added

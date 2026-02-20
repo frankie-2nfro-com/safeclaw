@@ -172,7 +172,8 @@ class BaseAgent:
     def process(self, user_input: str, source: str = "Console") -> str:
         """Process one turn. Returns response text."""
         self._ensure_ready()
-        return self._llm.process_turn(user_input)
+        thinking = self.config.get("thinking", True)
+        return self._llm.process_turn(user_input, thinking=thinking)
 
     @classmethod
     def ensure_workspace_files(cls) -> None:

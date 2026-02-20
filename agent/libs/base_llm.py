@@ -10,6 +10,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, Tuple
 
+from libs.logger import dialog
+
 
 class LLMResponseError(Exception):
     """Raised when the LLM response cannot be parsed meaningfully."""
@@ -161,7 +163,7 @@ class BaseLLM(ABC):
         return (text, None)
 
     # --- Process turn (from chat_core.py) ---
-    def process_turn(self, user_input: str) -> str:
+    def process_turn(self, user_input: str, thinking: bool = True) -> str:
         input_history = json.loads((self.workspace / "input_history.json").read_text(encoding="utf-8"))
 
         prompt = self.create_prompt(user_input)
@@ -175,6 +177,8 @@ class BaseLLM(ABC):
         with open(llm_log_path, "a", encoding="utf-8") as f:
             f.write(f"{ts_q} Q: {user_input}\n")
 
+        if thinking:
+            dialog("Waiting for LLM...")
         try:
             output = self.chat(prompt)
         except Exception as e:

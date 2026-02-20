@@ -11,7 +11,7 @@ from typing import Optional
 
 from redis import Redis
 
-from libs.logger import log
+from libs.logger import dialog, log
 
 COMMAND_QUEUE = "safeclaw:command_queue"
 RESPONSE_PREFIX = "safeclaw:response:"
@@ -25,16 +25,23 @@ class ActionExecutor:
         self.params = params
         self.workspace = workspace or (Path(__file__).resolve().parent.parent / "workspace")
 
-    def _get_timeout(self) -> int:
-        """Timeout in seconds from config.json (response queue, message age)."""
+    def _get_config(self) -> dict:
+        """Load config.json for timeout, thinking, etc."""
         config_path = self.workspace.parent / "config.json"
         if config_path.exists():
             try:
-                cfg = json.loads(config_path.read_text(encoding="utf-8").strip())
-                return int(cfg.get("timeout", 10))
+                return json.loads(config_path.read_text(encoding="utf-8").strip())
             except (json.JSONDecodeError, ValueError):
                 pass
-        return 10
+        return {}
+
+    def _get_timeout(self) -> int:
+        """Timeout in seconds from config.json (response queue, message age)."""
+        return int(self._get_config().get("timeout", 10))
+
+    def _get_thinking(self) -> bool:
+        """Whether to show thinking status (waiting for LLM, router, etc.)."""
+        return self._get_config().get("thinking", True)
 
     def execute(self):
         from ability import get_action_class
@@ -48,6 +55,8 @@ class ActionExecutor:
             # AGENT ACTION: instantiate from registry and execute
             execution_message += f"Agent Action: {self.action}\n"
             execution_message += f"Params: {self.params}\n"
+            if self._get_thinking():
+                dialog(f"Executing agent action ({self.action})...")
             action_instance = action_class(workspace=self.workspace, params=self.params)
             result = action_instance.execute()
             executed_successfully = True
@@ -55,6 +64,9 @@ class ActionExecutor:
             # ROUTER ACTION: push to Redis, wait for response
             execution_message += f"Router Action: {self.action}\n"
             execution_message += f"Params: {self.params}\n"
+
+            if self._get_thinking():
+                dialog(f"Waiting for router ({self.action})...")
 
             message_id = str(uuid.uuid4())
             result_holder = [None]
