@@ -1,0 +1,18 @@
+Consent handling
+Only checks a fixed list of button texts; may miss regional or custom dialogs.
+Improvement: Add more texts, support iframes by URL pattern, or use a short timeout so slow consent doesn’t block the capture.
+
+No image understanding
+Only text is summarized; screenshot is stored but not analyzed.
+Improvement: Optional vision model (e.g. GPT-4V, Gemini) to describe images when needed.
+
+No user intent
+Same behavior for all URLs.
+Improvement: Optional params like scroll_to_bottom, wait_for_selector, or extract_links to adapt behavior.
+
+Content extraction
+.text can miss content in iframes, shadow DOM, or dynamic content.
+Improvement: Extract from iframes, or use a more robust extraction method (e.g. readability-style).
+
+Single output filename
+Always overwrites browser_vision.*, so multiple URLs in one run overwrite each other.

@@ -10,7 +10,9 @@
     "name": "_BROWSER_VISION",
     "instruction": "Use this for ANY request to see, read, or get information from a website (including headlines, news, or summaries).",
     "params": {
-      "url": "string"
+      "url": "string",
+      "full_page": true, 
+      "headless": false
     }
   }, 
   {
