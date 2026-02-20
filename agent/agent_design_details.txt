@@ -55,7 +55,7 @@ agent/
 │   ├── SOUL.md              # Identity, tone, ethical boundaries
 │   ├── memory.json          # Persistent key-value memory
 │   ├── agent_action.json    # Agent actions the LLM can call (local)
-│   ├── router_actions.json  # Router actions the LLM can call (via queue)
+│   ├── router_action.json  # Router actions the LLM can call (via queue)
 │   ├── input_history.json   # Last 10 user/response pairs
 │   ├── artifact.json        # Latest action results, follow-ups
 │   └── output/              # Generated files (prompt_cache, browser_vision.*)
@@ -81,7 +81,7 @@ COMPONENTS
      {{ARTIFACT}}         <- artifact.json
      {{USER_INPUT_HISTORY}} <- input_history.json
      {{AGENT_ACTIONS}}    <- agent_action.json
-     {{ROUTER_ACTIONS}}   <- router_actions.json
+     {{ROUTER_ACTIONS}}   <- router_action.json
      {{USER_MESSAGE}}     <- escaped user input
    - Writes result to workspace/output/prompt_cache.txt
 
@@ -95,7 +95,7 @@ COMPONENTS
      A) AGENT ACTION: get_action_class(action) returns class -> instantiate, run execute()
      B) ROUTER ACTION: No class in registry -> push to Redis, BLPOP response (timeout from config.json)
    - Agent actions live in ability/ (memory_write, browser_vision, llm_summary)
-   - Router actions: any name in router_actions.json (e.g. CREATE_POST)
+   - Router actions: any name in router_action.json (e.g. CREATE_POST)
 
 5. libs/agent_config.py (AgentConfig)
    - load_config(): Load config.json, clone from config_initial.json if missing
@@ -143,7 +143,7 @@ Placeholders:
   {{ARTIFACT}}           - artifact.json (last action results)
   {{USER_INPUT_HISTORY}} - input_history.json
   {{AGENT_ACTIONS}}      - agent_action.json (tool definitions)
-  {{ROUTER_ACTIONS}}     - router_actions.json
+  {{ROUTER_ACTIONS}}     - router_action.json
   {{USER_MESSAGE}}       - Current user input (escaped)
 
 
@@ -194,7 +194,7 @@ ADDING A NEW AGENT ACTION
 ADDING A NEW ROUTER ACTION
 -------------------------
 
-1. Add entry to workspace/router_actions.json.
+1. Add entry to workspace/router_action.json.
 2. Create skill in router/skills/{action_name}/skill.py.
 3. Agent will push to queue; Router will route and execute.
 

@@ -17,6 +17,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.0.15] - 2026-02-20
+
+### Added
+- N/A
+
+### Changed
+- file name of router_action(s).json and router_action(s)_initial.json will be removed with 's'
+
+### Fixed
+- N/A
+
+---
+
 ## [1.0.14] - 2026-02-20
 
 ### Added

@@ -104,7 +104,7 @@ ADDING A NEW SKILL
 3. Implement execute(self, params: dict)
    - Return dict (merged into response to Agent)
 
-4. Ensure action is in agent workspace/router_actions.json so the LLM knows it exists.
+4. Ensure action is in agent workspace/router_action.json so the LLM knows it exists.
 
 5. Router auto-loads: action GENERATE_NEWS_FEED -> skills.generate_news_feed.skill.GenerateNewsFeedSkill
 

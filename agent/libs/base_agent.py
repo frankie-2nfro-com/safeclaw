@@ -35,7 +35,7 @@ class BaseAgent:
 
     WORKSPACE_INITIAL_TEMPLATES = {
         "agent_action.json": "agent_action_initial.json",
-        "router_actions.json": "router_actions_initial.json",
+        "router_action.json": "router_action_initial.json",
         "SOUL.md": "SOUL_initial.md",
     }
 
@@ -103,7 +103,7 @@ class BaseAgent:
         channel_names = [c.source_name for c in self.channels]
         router_actions = []
         try:
-            raw = (self.WORKSPACE / "router_actions.json").read_text(encoding="utf-8").strip()
+            raw = (self.WORKSPACE / "router_action.json").read_text(encoding="utf-8").strip()
             if raw:
                 actions = json.loads(raw)
                 router_actions = [a.get("name", "") for a in actions if isinstance(a, dict) and a.get("name")]

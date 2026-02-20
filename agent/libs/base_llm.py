@@ -63,7 +63,7 @@ class BaseLLM(ABC):
             return raw
 
     def _load_router_actions(self) -> str:
-        path = self.workspace / "router_actions.json"
+        path = self.workspace / "router_action.json"
         if not path.exists():
             return "[]"
         raw = path.read_text(encoding="utf-8").strip()
