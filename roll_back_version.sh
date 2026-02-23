@@ -33,15 +33,27 @@ if ! git rev-parse "$TAG" >/dev/null 2>&1; then
   exit 1
 fi
 
-echo "This will restore all tracked files to $TAG state."
-echo "Your current changes will be overwritten. Uncommitted changes will be LOST."
+echo "This will restore the working tree to exact $TAG state."
+echo "  - Tracked files: reverted to $TAG"
+echo "  - Files added after $TAG: removed"
+echo "  - Untracked files: removed (except .env)"
+echo "Uncommitted changes will be LOST."
 read -p "Continue? (y/n) " -n 1 -r
 echo
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
   exit 1
 fi
 
+# 1. Restore tracked files to TAG state
 git checkout "$TAG" -- .
+
+# 2. Remove files that were added after TAG (exist in HEAD but not in TAG)
+for f in $(git diff --diff-filter=A --name-only "$TAG" HEAD 2>/dev/null || true); do
+  [[ -e "$f" ]] && rm -f "$f"
+done
+
+# 3. Remove untracked files and dirs (preserve .env)
+git clean -fd -e .env -e .env.local
 
 echo ""
 echo "Done. Working tree restored to $TAG."

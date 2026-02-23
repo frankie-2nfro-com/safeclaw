@@ -17,6 +17,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.0.23] - 2026-02-23
+
+### Fixed
+- roll_back_version.sh not clear added files
+
+---
+
 ## [1.0.22] - 2026-02-20
 
 ### Fixed
