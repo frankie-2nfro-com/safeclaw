@@ -17,6 +17,14 @@
     }
   },
   {
+    "name": "_DELETE_SCHEDULE",
+    "instruction": "Remove scheduled reminder(s). Use when user wants to cancel, delete, or remove a reminder. Match by datetime and/or message (message is substring match, case-insensitive). At least one of datetime or message required. datetime: YYYY-MM-DD HH:MM.",
+    "params": {
+      "datetime": "YYYY-MM-DD HH:MM (optional)",
+      "message": "string (optional, substring match)"
+    }
+  },
+  {
     "name": "_BROWSER_VISION",
     "instruction": "Use this for ANY request to see, read, or get information from a website (including headlines, news, or summaries).",
     "params": {

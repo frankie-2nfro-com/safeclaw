@@ -14,6 +14,24 @@ SCHEDULE_JSON = "schedule.json"
 SCHEDULE_LOG = Path(__file__).resolve().parent.parent / "logs" / "schedule.log"
 
 
+def normalize_datetime(dt_str: str) -> str:
+    """Normalize to YYYY-MM-DD HH:MM for storage and matching. Accepts T or space.
+    Handles date-only (YYYY-MM-DD) by appending 00:00. Validates format.
+    """
+    if not dt_str or not isinstance(dt_str, str):
+        return ""
+    s = dt_str.strip().replace("T", " ")
+    if len(s) >= 16:
+        s = s[:16]
+    elif len(s) == 10:
+        s = s + " 00:00"
+    try:
+        parsed = datetime.strptime(s[:16], "%Y-%m-%d %H:%M")
+        return parsed.strftime("%Y-%m-%d %H:%M")
+    except ValueError:
+        return s[:16] if len(s) >= 16 else s
+
+
 def append_schedule_item(workspace: Path, item: dict) -> None:
     """Append item to schedule.json. Used by ADD_SCHEDULE action."""
     path = Path(workspace) / SCHEDULE_JSON
@@ -28,6 +46,51 @@ def append_schedule_item(workspace: Path, item: dict) -> None:
         path.write_text(json.dumps(schedule, indent=2), encoding="utf-8")
     except (json.JSONDecodeError, OSError):
         path.write_text(json.dumps([item], indent=2), encoding="utf-8")
+
+
+def remove_schedule_items(
+    workspace: Path,
+    datetime_str: Optional[str] = None,
+    message: Optional[str] = None,
+) -> int:
+    """Remove schedule items matching datetime and/or message. Returns count removed.
+    At least one of datetime_str or message must be provided.
+    datetime: YYYY-MM-DD HH:MM (exact match). message: substring match (case-insensitive).
+    """
+    if not datetime_str and not message:
+        return 0
+    path = Path(workspace) / SCHEDULE_JSON
+    if not path.exists():
+        return 0
+    try:
+        raw = path.read_text(encoding="utf-8").strip()
+        data = json.loads(raw) if raw else []
+        schedule = data if isinstance(data, list) else []
+    except (json.JSONDecodeError, OSError):
+        return 0
+
+    dt_norm = normalize_datetime(datetime_str) if datetime_str else ""
+    msg_lower = message.lower().strip() if message else ""
+
+    def matches(item: Any) -> bool:
+        if not isinstance(item, dict):
+            return False
+        if dt_norm:
+            item_dt = item.get("datetime", "")
+            if normalize_datetime(item_dt) != dt_norm:
+                return False
+        if msg_lower:
+            item_msg = item.get("message", "") or ""
+            if msg_lower not in item_msg.lower():
+                return False
+        return True
+
+    original_len = len(schedule)
+    schedule = [i for i in schedule if not matches(i)]
+    removed = original_len - len(schedule)
+    if removed > 0:
+        path.write_text(json.dumps(schedule, indent=2), encoding="utf-8")
+    return removed
 
 
 class Scheduler:
