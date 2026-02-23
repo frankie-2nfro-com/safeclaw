@@ -32,6 +32,7 @@ Today: {{CURRENT_DAY}}
 Current date and time: {{CURRENT_DATETIME}}
 Use for scheduling. "Tomorrow" = next calendar day. "3pm" = 15:00. "In 5 mins" = add 5 minutes to current time.
 
+
 🛡️ SAFECLAW CORE IDENTITY
 <soul>
 {{SOUL_CONTENT}}

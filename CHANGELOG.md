@@ -17,6 +17,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.0.31] - 2026-02-23
+
+### Fixed
+- Scheduler date time and relative time handling for llm
+
+---
+
 ## [1.0.30] - 2026-02-23
 
 ### Added

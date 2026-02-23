@@ -1,1 +1,10 @@
-[]
+[
+  {
+    "datetime": "2026-02-23 17:00",
+    "type": "reminder",
+    "data": {
+      "message": "Close door"
+    },
+    "limit_channel": []
+  }
+]
