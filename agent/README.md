@@ -92,6 +92,7 @@ A tick thread runs every minute (aligned to minute boundaries). Checks `workspac
 
 - **type reminder** — Broadcasts `data.message` to channels.
 - **type action** — Runs agent or router action via ActionExecutor (`data.action`, `data.param`).
+- **type prompt** — Runs `data.message` as user prompt through agent (LLM + tools) at scheduled time.
 - **ADD_SCHEDULE** / **DELETE_SCHEDULE** — Add or remove items.
 - **/schedule** — List all scheduled items.
 

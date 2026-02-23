@@ -32,7 +32,7 @@ Schedule reminders and actions to run at a specific time. The scheduler ticks ev
 ```
 
 - **datetime** — `YYYY-MM-DD HH:MM`. Required.
-- **type** — `reminder` (broadcast message), `action` (run agent/router action), or `prompt` (future).
+- **type** — `reminder` (broadcast message), `action` (run agent/router action), or `prompt` (run instruction through agent).
 - **data.message** — Description or reminder text.
 - **data.action** — Agent/router action name (e.g. `_MEMORY_WRITE`, `_BROADCAST_MSG`). Only when `type` is `action`.
 - **data.param** — Params for that action. Only when `type` is `action`.
@@ -95,6 +95,40 @@ Runs an agent or router action at the scheduled time.
 }
 ```
 
+### prompt
+
+Runs a free-form instruction through the agent (LLM + tools) at the scheduled time. Use when the task needs values computed at runtime (e.g. current datetime) or when the instruction is open-ended.
+
+- Uses `data.message` as the instruction.
+- At the scheduled time, the agent runs it as a user prompt (with `_ADD_SCHEDULE` excluded).
+- Message order: `[Scheduled]` response first, then tool output (e.g. `_BROADCAST_MSG`).
+
+**Example — get current datetime and broadcast after 3 mins:**
+
+User says:
+```
+Schedule to run a prompt after 3 mins. Prompt: get current date and time and broadcast
+```
+
+This creates:
+```json
+{
+  "datetime": "2026-02-24 18:05",
+  "type": "prompt",
+  "data": { "message": "get current date and time and broadcast" },
+  "limit_channel": []
+}
+```
+
+At the scheduled time:
+1. Agent runs the instruction as a user prompt.
+2. LLM calls `_BROADCAST_MSG` with the current datetime.
+3. Output order: `[Scheduled]` response first, then the broadcast content (e.g. "The current date and time is 2026-02-24 18:05:00.").
+
+**Other phrasings that work:**
+- `Schedule this prompt after 2 mins: Check current datetime and broadcast to telegram`
+- `Set this prompt and schedule to run after 3 mins: get current datetime and send it to telegram`
+
 ---
 
 ## Adding Schedules
@@ -110,6 +144,10 @@ Use `_ADD_SCHEDULE` via natural language:
 - `Set memory Task to Done after 3 mins`
 - `Please help set memory value "Task" to "Done" after 3 mins`
 - `Broadcast Hello in 5 mins`
+
+**Scheduled prompts (run instruction at time):**
+- `Schedule to run a prompt after 3 mins. Prompt: get current date and time and broadcast`
+- `Schedule this prompt after 2 mins: Check current datetime and broadcast to telegram`
 
 For "in X mins", use `relative_minutes` (server computes datetime). For specific times, use `datetime` in `YYYY-MM-DD HH:MM`.
 

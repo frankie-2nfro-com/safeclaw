@@ -163,6 +163,7 @@ class Scheduler:
         """Execute a matched schedule item. Type determines behavior.
         'reminder' -> broadcast to channels.
         'action' -> run via ActionExecutor (agent or router based on action code).
+        'prompt' -> run data.message as user input through agent (LLM + tools), broadcast response.
         """
         item_type = (item.get("type") or "reminder").strip().lower()
 
@@ -172,6 +173,23 @@ class Scheduler:
                 channels = item.get("limit_channel")
                 channels = channels if (channels and isinstance(channels, list)) else None
                 self._agent.broadcast_message(f"Reminder: {message}", channels)
+
+        elif item_type == "prompt":
+            message = self._get_item_message(item)
+            if message and self._agent and hasattr(self._agent, "process"):
+                try:
+                    # Pass as normal user request (_ADD_SCHEDULE excluded when source=Schedule)
+                    prompt_input = message
+                    response = self._agent.process(prompt_input, source="Schedule", flush_broadcasts_after=True)
+                    if response and hasattr(self._agent, "broadcast_message"):
+                        channels = item.get("limit_channel")
+                        channels = channels if (channels and isinstance(channels, list)) else None
+                        self._agent.broadcast_message(f"[Scheduled] {response}", channels)
+                    if hasattr(self._agent, "_flush_pending_broadcasts"):
+                        self._agent._flush_pending_broadcasts()
+                    self._log(f"[Schedule] prompt executed: {message[:50]}...")
+                except Exception as e:
+                    self._log(f"[Schedule] prompt error: {e}")
 
         elif item_type == "action":
             data = item.get("data")

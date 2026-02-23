@@ -214,12 +214,13 @@ class BaseAgent:
 
         return stop
 
-    def process(self, user_input: str, source: str = "Console") -> str:
-        """Process one turn. Returns response text."""
+    def process(self, user_input: str, source: str = "Console", flush_broadcasts_after: bool = False) -> str:
+        """Process one turn. Returns response text. flush_broadcasts_after: if True, caller flushes (for correct order)."""
         self._ensure_ready()
         thinking = self.config.get("thinking", True)
         response = self._llm.process_turn(user_input, thinking=thinking)
-        self._flush_pending_broadcasts()
+        if not flush_broadcasts_after:
+            self._flush_pending_broadcasts()
         return response
 
     @classmethod

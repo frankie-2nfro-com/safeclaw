@@ -84,7 +84,7 @@ class TelegramChannel(BaseChannel):
         asyncio.run_coroutine_threadsafe(_send(), self._loop)
 
     def send_broadcast(self, message: str) -> None:
-        """Send agent-initiated broadcast to all known Telegram chats."""
+        """Send agent-initiated broadcast to all known Telegram chats. Blocks until sent to preserve order."""
         if not self._loop or not self._application:
             return
         chat_ids = self._target_chat_ids()
@@ -96,7 +96,11 @@ class TelegramChannel(BaseChannel):
                     await self._application.bot.send_message(chat_id=chat_id, text=message[:4096])
                 except Exception as e:
                     log(f"[Telegram send_broadcast] {e}")
-        asyncio.run_coroutine_threadsafe(_send(), self._loop)
+        future = asyncio.run_coroutine_threadsafe(_send(), self._loop)
+        try:
+            future.result(timeout=15)
+        except Exception as e:
+            log(f"[Telegram send_broadcast wait] {e}")
 
     def start_typing(self) -> Optional[Callable[[], None]]:
         """Start typing indicator for all broadcast chats (e.g. when Console is processing).

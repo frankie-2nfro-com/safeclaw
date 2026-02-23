@@ -8,9 +8,9 @@
   },
   {
     "name": "_ADD_SCHEDULE",
-    "instruction": "Add a scheduled reminder or task. limit_channel: [] = all channels. CRITICAL: datetime must be YYYY-MM-DD HH:MM. NEVER put 'in 3 mins' in datetime. For 'in X mins': set relative_minutes to X, omit datetime. type 'reminder': data.message only, omit action/param. type 'action': user wants to RUN a task at a time - set data.action and data.param. Example 'set memory Task to Done in 3 mins': type action, data.action _MEMORY_WRITE, data.param {new_memory:{Task:Done}}, data.message 'Update Task to Done'. Example 'broadcast Hello in 5 mins': type action, data.action _BROADCAST_MSG, data.param {message:Hello,channels:[]}.",
+    "instruction": "Add a scheduled reminder or task. CRITICAL: If user says 'schedule this prompt' or 'schedule to do this' or 'run this prompt' → type MUST be 'prompt' (agent runs instruction at scheduled time), NOT 'reminder'. limit_channel: [] = all channels. Relative times (e.g. 'in 3 mins', 'in 1 hour'): set relative_minutes to the number, leave datetime empty. Absolute times (e.g. 'tomorrow at 5pm'): set datetime as YYYY-MM-DD HH:MM. datetime must be YYYY-MM-DD HH:MM only—no natural language. type 'reminder': data:{message:'...'} only, omit action/param. type 'action': data:{message:'...', action:'...', param:{...}}. type 'prompt': user wants to RUN a free-form instruction - set data:{message:'instruction text'}. CRITICAL: data must be an object. Use data:{message:'...'} never data.message as top-level key. For prompt: extract instruction after colon into data object. Example: data:{message:'get current datetime and send it to telegram'}. Example action: data:{message:'Update Task to Done',action:'_MEMORY_WRITE',param:{new_memory:{Task:Done}}}. Example broadcast: data:{message:'Hello',action:'_BROADCAST_MSG',param:{message:'Hello',channels:[]}}.",
     "params": {
-      "datetime": "YYYY-MM-DD HH:MM only. For 'in X mins' leave empty, use relative_minutes",
+      "datetime": "YYYY-MM-DD HH:MM for absolute times. Leave empty when using relative_minutes",
       "relative_minutes": "number e.g. 3 for 'in 3 mins'. Required when user says 'in X minutes'",
       "type": "reminder|action|prompt",
       "data": {

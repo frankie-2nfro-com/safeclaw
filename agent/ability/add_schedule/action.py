@@ -58,6 +58,12 @@ class AddScheduleAction(BaseAgentAction):
             action = ""
             param = {}
 
+        item_type = self.params.get("type", "reminder")
+        if not dt_str or not dt_str.strip():
+            raise ValueError("Missing datetime. For 'after 3 mins' set relative_minutes: 3.")
+        if item_type in ("reminder", "prompt") and not (msg or "").strip():
+            raise ValueError("Missing data.message. Extract the instruction from the user's request.")
+
         data = {"message": msg}
         if action:
             data["action"] = action
