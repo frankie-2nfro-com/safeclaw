@@ -17,6 +17,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.0.24] - 2026-02-23
+
+### Added
+- Tick mechanism for agent for future scheduler
+
+---
+
 ## [1.0.23] - 2026-02-23
 
 ### Fixed

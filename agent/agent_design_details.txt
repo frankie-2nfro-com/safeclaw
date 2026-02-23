@@ -31,6 +31,7 @@ agent/
 │   ├── base_llm.py          # BaseLLM: prompt, parse, process_turn. Provider subclasses implement chat()
 │   ├── action_executor.py   # ActionExecutor: maps action -> ability, runs locally or pushes router
 │   ├── command.py           # Channel commands: whoami, memory, soul. Channels call run_command().
+│   ├── scheduler.py         # Scheduler: tick thread, logs to logs/schedule.log every minute
 │   └── remote_chrome_utils.py  # dismiss_consent() for BROWSER_VISION
 │
 ├── ability/                  # Self-contained agent actions (one folder per action)
@@ -112,7 +113,14 @@ COMPONENTS
    - Telegram: CommandHandler for each; set_my_commands() on startup
    - Adding a command: add function, add to run_command(), append to COMMANDS
 
-7. libs/remote_chrome_utils.py
+7. libs/scheduler.py (Scheduler)
+   - Tick thread: fires every minute, aligned to minute boundaries
+   - Logs to logs/schedule.log: "YYYY-MM-DD HH:MM:SS TICK"
+   - Agent owns it: BaseAgent creates Scheduler(agent=self), calls start() in run()
+   - Clean shutdown: atexit + try/finally call stop() on Ctrl+C or quit
+   - Extensible for future scheduled tasks (reminders, prompts, actions)
+
+8. libs/remote_chrome_utils.py
    - dismiss_consent(driver): Clicks cookie/consent buttons before screenshot
 
 
@@ -220,7 +228,7 @@ Or from project root:
 
 Commands:
   ./start_agent.py           - Start the agent
-  ./start_agent.py clear    - Clear workspace (artifact, input_history, log, output/)
+  ./start_agent.py clear    - Clear workspace (artifact, input_history, system.log, llm.log, schedule.log, output/)
   ./start_agent.py config [key] - Interactive config. Keys: timeout, llm
 
 Channel commands (Console and Telegram):

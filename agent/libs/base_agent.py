@@ -3,6 +3,7 @@ Base agent: workspace, process_turn logic, and channels.
 Channels are I/O (ConsoleChannel, TelegramChannel, etc.) - parts of the agent.
 On startup: load config.json (clone from config_initial.json if missing), use llm settings to select LLM class.
 """
+import atexit
 import json
 import os
 import shutil
@@ -16,6 +17,7 @@ from dotenv import load_dotenv
 from channel.console.channel import ConsoleChannel
 from libs.agent_config import AgentConfig
 from libs.logger import LOG_PATH, dialog, log, logging_setup
+from libs.scheduler import Scheduler
 from channel.telegram.channel import TelegramChannel
 from llm import get_llm
 
@@ -61,12 +63,14 @@ class BaseAgent:
             self.console_monitor = console_monitor
             self._llm = None
             self._provider = None
+            self._scheduler = Scheduler(agent=self)
             return
         self.config = config or self.load_config()
         self.console_monitor = console_monitor
         self.channels = self._build_channels()
         self._llm = None
         self._provider = None
+        self._scheduler = Scheduler(agent=self)
 
 
 
@@ -122,25 +126,30 @@ class BaseAgent:
             return
         self.ensure_workspace_files()
         self.print_banner()
-        # Telegram (and similar) must run in main thread - run_polling uses signal handlers
-        telegram_ch = next((c for c in self.channels if c.source_name == "Telegram"), None)
-        console_ch = next((c for c in self.channels if c.source_name == "Console"), None)
-        if telegram_ch:
-            log("Telegram bot running.")
-            dialog("Send a message to your bot.")
-            dialog("")
-            if not getattr(telegram_ch, "_broadcast_chat_ids", set()):
-                dialog("Tip: To receive Console messages in Telegram, message the bot first or add broadcast_chat_ids to config.json (get chat ID from @userinfobot)")
-            # Run Console in background thread, Telegram in main
-            if console_ch:
-                t = threading.Thread(target=console_ch.run, args=(self,))
-                t.daemon = True
-                t.start()
-            telegram_ch.run(self)
-        else:
-            # No Telegram: run Console in main thread
-            if console_ch:
-                console_ch.run(self)
+        self._scheduler.start()
+        atexit.register(self._scheduler.stop)
+        try:
+            # Telegram (and similar) must run in main thread - run_polling uses signal handlers
+            telegram_ch = next((c for c in self.channels if c.source_name == "Telegram"), None)
+            console_ch = next((c for c in self.channels if c.source_name == "Console"), None)
+            if telegram_ch:
+                log("Telegram bot running.")
+                dialog("Send a message to your bot.")
+                dialog("")
+                if not getattr(telegram_ch, "_broadcast_chat_ids", set()):
+                    dialog("Tip: To receive Console messages in Telegram, message the bot first or add broadcast_chat_ids to config.json (get chat ID from @userinfobot)")
+                # Run Console in background thread, Telegram in main
+                if console_ch:
+                    t = threading.Thread(target=console_ch.run, args=(self,))
+                    t.daemon = True
+                    t.start()
+                telegram_ch.run(self)
+            else:
+                # No Telegram: run Console in main thread
+                if console_ch:
+                    console_ch.run(self)
+        finally:
+            self._scheduler.stop()
 
     def broadcast_to_other_channels(self, user_input: str, exclude_source: str) -> None:
         """Replicate user input to all channels except the source."""
@@ -194,7 +203,7 @@ class BaseAgent:
 
     @classmethod
     def clear_workspace(cls) -> None:
-        """Reset artifact.json, input_history.json, clear log file, and remove workspace/output/."""
+        """Reset artifact.json, input_history.json, clear logs (system, llm, schedule), and workspace/output/."""
         cls.WORKSPACE.mkdir(parents=True, exist_ok=True)
         with open(cls.WORKSPACE / "artifact.json", "w", encoding="utf-8") as f:
             json.dump({}, f, indent=2)
@@ -205,8 +214,11 @@ class BaseAgent:
         llm_log = LOG_PATH.parent / "llm.log"
         if llm_log.exists():
             llm_log.write_text("", encoding="utf-8")
+        schedule_log = LOG_PATH.parent / "schedule.log"
+        if schedule_log.exists():
+            schedule_log.write_text("", encoding="utf-8")
         output_dir = cls.WORKSPACE / "output"
         if output_dir.exists():
             shutil.rmtree(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
-        print("Cleared artifact.json, input_history.json, system.log, llm.log, and workspace/output/", flush=True)
+        print("Cleared artifact.json, input_history.json, system.log, llm.log, schedule.log, and workspace/output/", flush=True)
