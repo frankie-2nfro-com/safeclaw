@@ -128,6 +128,7 @@ python start_router.py
 - `_LLM_SUMMARY` – Summarize content via Ollama
 - `_ADD_SCHEDULE` – Add scheduled reminder (datetime, message, limit_channel)
 - `_DELETE_SCHEDULE` – Remove reminders by datetime and/or message
+- `_BROADCAST_MSG` – Broadcast message to channels (message, channels; empty = all)
 
 ## Router Actions (via queue)
 

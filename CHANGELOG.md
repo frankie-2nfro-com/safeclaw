@@ -17,6 +17,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.0.29] - 2026-02-23
+
+### Added
+- _BROADCAST_MSG agent action
+- Schedule reminder implementation
+
+---
+
 ## [1.0.28] - 2026-02-23
 
 ### Added

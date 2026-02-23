@@ -8,9 +8,10 @@
   },
   {
     "name": "_ADD_SCHEDULE",
-    "instruction": "Add a scheduled reminder or task. Use when the user wants to be reminded at a specific time. limit_channel: empty [] = all channels; if user specifies channel(s), list them. datetime: use YYYY-MM-DD HH:MM (space not T).",
+    "instruction": "Add a scheduled reminder or task. Use when the user wants to be reminded at a specific time. limit_channel: empty [] = all channels; if user specifies channel(s), list them. For 'in X minutes' or 'in X mins': set relative_minutes to X (number) and message; datetime is ignored. For specific times (tomorrow 3pm, etc): use datetime YYYY-MM-DD HH:MM.",
     "params": {
-      "datetime": "YYYY-MM-DD HH:MM",
+      "datetime": "YYYY-MM-DD HH:MM (use for specific times)",
+      "relative_minutes": "number (use for 'in X mins' - overrides datetime)",
       "type": "reminder",
       "message": "string",
       "limit_channel": []
@@ -22,6 +23,14 @@
     "params": {
       "datetime": "YYYY-MM-DD HH:MM (optional)",
       "message": "string (optional, substring match)"
+    }
+  },
+  {
+    "name": "_BROADCAST_MSG",
+    "instruction": "Broadcast a message to channels. Use when user wants to send or announce a message to Console, Telegram, or all. channels: [] = all channels; otherwise list channel names (Console, Telegram).",
+    "params": {
+      "message": "string",
+      "channels": []
     }
   },
   {

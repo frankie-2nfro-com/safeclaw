@@ -64,3 +64,7 @@ class BaseChannel(ABC):
     def broadcast_response(self, response: str, from_source: str) -> None:
         """Display a response replicated from another channel. Override to support cross-channel replication."""
         pass
+
+    def send_broadcast(self, message: str) -> None:
+        """Send a message to all users of this channel (e.g. agent-initiated broadcast). Override to implement."""
+        pass

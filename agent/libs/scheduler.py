@@ -152,8 +152,19 @@ class Scheduler:
             pass
 
     def _run_schedule(self, item: dict) -> None:
-        """Execute a matched schedule item. Override or extend for actions."""
-        self._log(f"[Schedule] {item}")
+        """Execute a matched schedule item. Type determines behavior.
+        'reminder' -> broadcast to channels; other types -> log only (implement later).
+        """
+        item_type = (item.get("type") or "reminder").strip().lower()
+
+        if item_type == "reminder":
+            message = item.get("message") or ""
+            if message and self._agent and hasattr(self._agent, "broadcast_message"):
+                channels = item.get("limit_channel")
+                channels = channels if (channels and isinstance(channels, list)) else None
+                self._agent.broadcast_message(f"Reminder: {message}", channels)
+
+        self._log(f"[Schedule] type={item_type} {item}")
 
     def _check_schedule(self) -> None:
         """Reload schedule.json, find records matching current minute, run action, remove from schedule."""

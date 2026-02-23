@@ -164,6 +164,40 @@ class BaseAgent:
             if ch.source_name != exclude_source:
                 ch.broadcast_response(response, exclude_source)
 
+    def broadcast_message(self, message: str, channels: Optional[List[str]] = None) -> None:
+        """Send message to specified channels. channels=None or [] = all channels."""
+        target_names = {c.strip() for c in channels} if channels else None
+        for ch in self.channels:
+            if target_names is None or ch.source_name in target_names:
+                if hasattr(ch, "send_broadcast") and callable(getattr(ch, "send_broadcast")):
+                    ch.send_broadcast(message)
+
+    def _flush_pending_broadcasts(self) -> None:
+        """Read workspace/broadcast_pending.json, send to channels, delete file."""
+        path = self.WORKSPACE / "broadcast_pending.json"
+        if not path.exists():
+            return
+        try:
+            raw = path.read_text(encoding="utf-8").strip()
+            data = json.loads(raw) if raw else {}
+            pending = data.get("pending", [])
+            if isinstance(pending, dict):
+                pending = [pending]
+            if not isinstance(pending, list):
+                pending = []
+            for item in pending:
+                if isinstance(item, dict) and item.get("message"):
+                    msg = item.get("message", "")
+                    ch_list = item.get("channels")
+                    self.broadcast_message(msg, ch_list if ch_list else None)
+        except (json.JSONDecodeError, OSError):
+            pass
+        finally:
+            try:
+                path.unlink(missing_ok=True)
+            except OSError:
+                pass
+
     def start_typing_except(self, source: str):
         """Start typing on channels that support it (e.g. Telegram) when another channel is processing.
         Returns a stop() callback to call when done."""
@@ -184,7 +218,9 @@ class BaseAgent:
         """Process one turn. Returns response text."""
         self._ensure_ready()
         thinking = self.config.get("thinking", True)
-        return self._llm.process_turn(user_input, thinking=thinking)
+        response = self._llm.process_turn(user_input, thinking=thinking)
+        self._flush_pending_broadcasts()
+        return response
 
     @classmethod
     def ensure_workspace_files(cls) -> None:

@@ -32,6 +32,10 @@ class ConsoleChannel(BaseChannel):
         print(f"\nSafeClaw: {response}\n", flush=True)
         print("You: ", end="", flush=True)
 
+    def send_broadcast(self, message: str) -> None:
+        """Send agent-initiated broadcast to console."""
+        print(f"\nSafeClaw: {message}\n", flush=True)
+
     def run(self, agent) -> None:
         """Blocking loop: receive -> process -> send."""
         agent._ensure_ready()

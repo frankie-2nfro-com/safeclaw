@@ -1,12 +1,1 @@
-{
-        "_MEMORY_WRITE":{"ability":"memory_write","class":"MemoryWriteAction"},
-        "MEMORY_WRITE":{"ability":"memory_write","class":"MemoryWriteAction"},
-        "_ADD_SCHEDULE":{"ability":"add_schedule","class":"AddScheduleAction"},
-        "ADD_SCHEDULE":{"ability":"add_schedule","class":"AddScheduleAction"},
-        "_DELETE_SCHEDULE":{"ability":"delete_schedule","class":"DeleteScheduleAction"},
-        "DELETE_SCHEDULE":{"ability":"delete_schedule","class":"DeleteScheduleAction"},
-        "_BROWSER_VISION":{"ability":"browser_vision","class":"BrowserVisionAction"},
-        "BROWSER_VISION":{"ability":"browser_vision","class":"BrowserVisionAction"},
-        "_LLM_SUMMARY":{"ability":"llm_summary","class":"LLMSummaryAction"},
-        "LLM_SUMMARY":{"ability":"llm_summary","class":"LLMSummaryAction"}
-}
+{"_MEMORY_WRITE":{"ability":"memory_write","class":"MemoryWriteAction"},"MEMORY_WRITE":{"ability":"memory_write","class":"MemoryWriteAction"},"_ADD_SCHEDULE":{"ability":"add_schedule","class":"AddScheduleAction"},"ADD_SCHEDULE":{"ability":"add_schedule","class":"AddScheduleAction"},"_DELETE_SCHEDULE":{"ability":"delete_schedule","class":"DeleteScheduleAction"},"DELETE_SCHEDULE":{"ability":"delete_schedule","class":"DeleteScheduleAction"},"_BROADCAST_MSG":{"ability":"broadcast_msg","class":"BroadcastMsgAction"},"BROADCAST_MSG":{"ability":"broadcast_msg","class":"BroadcastMsgAction"},"_BROWSER_VISION":{"ability":"browser_vision","class":"BrowserVisionAction"},"BROWSER_VISION":{"ability":"browser_vision","class":"BrowserVisionAction"},"_LLM_SUMMARY":{"ability":"llm_summary","class":"LLMSummaryAction"},"LLM_SUMMARY":{"ability":"llm_summary","class":"LLMSummaryAction"}}
