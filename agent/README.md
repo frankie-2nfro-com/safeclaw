@@ -89,6 +89,22 @@ agent/
 A tick thread runs every minute (aligned to minute boundaries). Checks `workspace/schedule.json` for records matching the current minute; logs matching items or "No Action" to `logs/schedule.log`.
 Agent owns the scheduler; it starts with the agent and stops cleanly on Ctrl+C or quit. Extensible for future scheduled tasks.
 
+### Schedule actions
+
+- **ADD_SCHEDULE** — Add a reminder at a specific time. Use `limit_channel: []` for all channels, or list channels (e.g. `["Telegram"]`).
+- **DELETE_SCHEDULE** — Remove reminders by `datetime` and/or `message` (substring match).
+
+### Sample prompts
+
+**Add reminders:**
+- `Remind me to check my email at 3pm tomorrow.`
+- `Remind me to send postcards at 4pm tomorrow by TELEGRAM`
+
+**Delete reminders:**
+- `Cancel the 3pm reminder` → `datetime: "2026-02-24 15:00"`
+- `Remove the email reminder` → `message: "email"`
+- `Delete the postcards reminder at 4pm` → `datetime: "2026-02-24 16:00"`, `message: "postcards"`
+
 ## Channel commands
 
 In Console or Telegram, type `/` for system commands:
@@ -96,5 +112,7 @@ In Console or Telegram, type `/` for system commands:
 - `/whoami` — Show channel and chat ID
 - `/memory` — Show current memory
 - `/soul` — Show agent identity (SOUL.md)
+- `/schedule` — List all scheduled reminders (sorted by datetime)
+- `/restart` — Restart the agent
 
 Command logic lives in `libs/command.py`; channels call `run_command()`. See agent_design_details.txt for full design documentation.

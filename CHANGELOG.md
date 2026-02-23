@@ -17,6 +17,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.0.28] - 2026-02-23
+
+### Added
+- (add changes here)
+
+### Changed
+- (add changes here)
+
+### Fixed
+- (add fixes here)
+
+---
+
 ## [1.0.27] - 2026-02-23
 
 ### Added
@@ -33,13 +46,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [1.0.26] - 2026-02-23
 
 ### Added
-- (add changes here)
-
-### Changed
-- (add changes here)
-
-### Fixed
-- (add fixes here)
+- command /schedule to list schedules 
 
 ---
 

@@ -1,5 +1,5 @@
 """
-Channel commands: whoami, memory, soul, restart.
+Channel commands: whoami, memory, soul, restart, schedule.
 Logic lives here; channels call these and send the response to the user.
 """
 import json
@@ -8,10 +8,13 @@ import sys
 from pathlib import Path
 from typing import List, Optional, Tuple
 
+from libs.scheduler import SCHEDULE_JSON
+
 COMMANDS: List[Tuple[str, str]] = [
     ("whoami", "Show your chat ID"),
     ("memory", "Show current memory"),
     ("soul", "Show agent identity and beliefs"),
+    ("schedule", "List all scheduled reminders"),
     ("restart", "Restart the agent"),
 ]
 
@@ -62,6 +65,33 @@ def soul(workspace: Path) -> str:
         return f"Error reading soul: {e}"
 
 
+def schedule(workspace: Path) -> str:
+    """Return formatted schedule list from workspace/schedule.json, sorted by datetime."""
+    path = workspace / SCHEDULE_JSON
+    if not path.exists():
+        return "Schedule (0 items):\n(No scheduled reminders)"
+    try:
+        raw = path.read_text(encoding="utf-8").strip()
+        data = json.loads(raw) if raw else []
+        items = [i for i in (data if isinstance(data, list) else []) if isinstance(i, dict)]
+        items.sort(key=lambda x: (x.get("datetime") or ""))
+        if not items:
+            return "Schedule (0 items):\n(No scheduled reminders)"
+        lines = []
+        for i, item in enumerate(items, 1):
+            dt = item.get("datetime", "")
+            msg = item.get("message", "")
+            channels = item.get("limit_channel")
+            if channels is None or not channels:
+                ch_str = "[all channels]"
+            else:
+                ch_str = f"[{', '.join(str(c) for c in channels)}]"
+            lines.append(f"{i}. {dt} — {msg} {ch_str}")
+        return "Schedule ({0} items):\n{1}".format(len(items), "\n".join(lines))
+    except Exception as e:
+        return f"Error reading schedule: {e}"
+
+
 def restart(workspace: Path) -> str:
     """Return restart message. Call perform_restart() after sending to user."""
     return "Restarting agent..."
@@ -96,6 +126,8 @@ def run_command(
         return memory(workspace)
     if name == "soul":
         return soul(workspace)
+    if name == "schedule":
+        return schedule(workspace)
     if name == "restart":
         return restart(workspace)
     return None
