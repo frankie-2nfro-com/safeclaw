@@ -33,6 +33,7 @@ class BaseAgent:
         "memory.json": {},
         "input_history.json": [],
         "artifact.json": {},
+        "schedule.json": [],
     }
 
     WORKSPACE_INITIAL_TEMPLATES = {
@@ -214,6 +215,9 @@ class BaseAgent:
         llm_log = LOG_PATH.parent / "llm.log"
         if llm_log.exists():
             llm_log.write_text("", encoding="utf-8")
+        schedule_log = LOG_PATH.parent / "schedule.log"
+        if schedule_log.exists():
+            schedule_log.write_text("", encoding="utf-8")
         schedule_log = LOG_PATH.parent / "schedule.log"
         if schedule_log.exists():
             schedule_log.write_text("", encoding="utf-8")

@@ -1,34 +1,79 @@
 """
 Scheduler: tick thread, fires every minute aligned to minute boundaries.
-Agent owns it and controls lifecycle (start/stop). Logs to logs/schedule.log.
-No Redis, no external deps. Extensible for future scheduled tasks.
+Agent owns it and controls lifecycle (start/stop). Loads workspace/schedule.json.
+Logs to logs/schedule.log. No Redis, no external deps.
 See agent/README.md and agent_design_details.txt.
 """
+import json
 import threading
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Any, List, Optional
 
+SCHEDULE_JSON = "schedule.json"
 SCHEDULE_LOG = Path(__file__).resolve().parent.parent / "logs" / "schedule.log"
 
 
 class Scheduler:
-    """Tick scheduler. Agent creates, starts, and stops it."""
+    """Tick scheduler. Agent creates, starts, and stops it. Loads schedule.json."""
 
     def __init__(self, agent: Optional[object] = None):
         self._agent = agent
         self._stop_event = threading.Event()
         self._thread: Optional[threading.Thread] = None
+        self._schedule: List[Any] = []
+        self._load_schedule()
 
-    def _write_tick(self) -> None:
+    def _get_workspace(self) -> Path:
+        if self._agent is not None and hasattr(self._agent, "WORKSPACE"):
+            return Path(self._agent.WORKSPACE)
+        return Path(__file__).resolve().parent.parent / "workspace"
+
+    def _load_schedule(self) -> None:
+        """Load schedule.json. Create with [] if missing."""
+        path = self._get_workspace() / SCHEDULE_JSON
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if not path.exists():
+            path.write_text("[]", encoding="utf-8")
+            self._schedule = []
+            return
+        try:
+            raw = path.read_text(encoding="utf-8").strip()
+            data = json.loads(raw) if raw else []
+            self._schedule = data if isinstance(data, list) else []
+        except (json.JSONDecodeError, OSError):
+            self._schedule = []
+
+    @property
+    def schedule(self) -> List[Any]:
+        """Loaded schedule from schedule.json (read-only)."""
+        return self._schedule
+
+    def _log(self, msg: str) -> None:
+        """Append to logs/schedule.log."""
         ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        line = f"{ts} TICK\n"
+        line = f"{ts} {msg}\n"
         try:
             SCHEDULE_LOG.parent.mkdir(parents=True, exist_ok=True)
             with open(SCHEDULE_LOG, "a", encoding="utf-8") as f:
                 f.write(line)
         except OSError:
             pass
+
+    def _check_schedule(self) -> None:
+        """Reload schedule.json, find records matching current minute, log to schedule.log."""
+        self._load_schedule()
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+        found = False
+        for item in self._schedule:
+            if not isinstance(item, dict):
+                continue
+            dt = item.get("datetime", "")
+            if isinstance(dt, str) and dt.strip() == now_str:
+                self._log(f"[Schedule] {item}")
+                found = True
+        if not found:
+            self._log("No Action")
 
     def _tick_loop(self) -> None:
         """Wait until next minute boundary, then tick every 60s. Stops when _stop_event is set."""
@@ -41,7 +86,7 @@ class Scheduler:
 
             if self._stop_event.is_set():
                 return
-            self._write_tick()
+            self._check_schedule()
 
             now = datetime.now()
             secs_until_next = 60 - (now.second + now.microsecond / 1_000_000)

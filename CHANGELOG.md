@@ -17,6 +17,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.0.25] - 2026-02-23
+
+### Added
+- schedule.json in workspace to store future schedules for the agent
+
+### Changed
+- scheduler will get schedule in the json 
+
+---
+
 ## [1.0.24] - 2026-02-23
 
 ### Added

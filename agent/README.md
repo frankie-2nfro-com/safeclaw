@@ -54,7 +54,7 @@ agent/
     base_llm.py        # BaseLLM: prompt, parse, process_turn
     action_executor.py
     command.py         # Channel commands: /whoami, /memory, /soul (Console, Telegram)
-    scheduler.py       # Scheduler: tick thread, logs to logs/schedule.log every minute
+    scheduler.py       # Scheduler: tick thread, checks schedule.json every minute
     remote_chrome_utils.py
   ability/            # Agent actions (memory_write, browser_vision, llm_summary)
     registry.json     # Maps action name -> ability folder (edit when adding abilities)
@@ -65,12 +65,13 @@ agent/
   workspace/
     memory.json
     input_history.json
+    schedule.json       # Scheduler tasks ([] if empty)
     PROMPT.md
     ...
   logs/
     system.log
     llm.log
-    schedule.log       # Scheduler tick log (every minute)
+    schedule.log       # Scheduler output (matches or "No Action")
 ```
 
 ## Adding a new ability
@@ -85,11 +86,7 @@ agent/
 
 ## Scheduler
 
-A tick thread runs every minute (aligned to minute boundaries). Logs to `logs/schedule.log`:
-```
-2025-02-11 10:24:00 TICK
-2025-02-11 10:25:00 TICK
-```
+A tick thread runs every minute (aligned to minute boundaries). Checks `workspace/schedule.json` for records matching the current minute; logs matching items or "No Action" to `logs/schedule.log`.
 Agent owns the scheduler; it starts with the agent and stops cleanly on Ctrl+C or quit. Extensible for future scheduled tasks.
 
 ## Channel commands

@@ -31,7 +31,7 @@ agent/
 │   ├── base_llm.py          # BaseLLM: prompt, parse, process_turn. Provider subclasses implement chat()
 │   ├── action_executor.py   # ActionExecutor: maps action -> ability, runs locally or pushes router
 │   ├── command.py           # Channel commands: whoami, memory, soul. Channels call run_command().
-│   ├── scheduler.py         # Scheduler: tick thread, logs to logs/schedule.log every minute
+│   ├── scheduler.py         # Scheduler: tick thread, checks schedule.json every minute
 │   └── remote_chrome_utils.py  # dismiss_consent() for BROWSER_VISION
 │
 ├── ability/                  # Self-contained agent actions (one folder per action)
@@ -48,22 +48,21 @@ agent/
 │       └── action.py
 │
 ├── llm/                     # LLM providers (base in libs/, implementations here)
-│   ├── ollama/
-│   │   ├── llm.py          # OllamaLLM: local Ollama connection
-│   │   └── OLLAMA_SETUP.md
+│   └── ollama/
+│       ├── llm.py          # OllamaLLM: local Ollama connection
+│       └── OLLAMA_SETUP.md
 │
-├── workspace/               # Runtime context and config
-│   ├── PROMPT.md            # Main prompt template (placeholders)
-│   ├── SOUL.md              # Identity, tone, ethical boundaries
-│   ├── memory.json          # Persistent key-value memory
-│   ├── agent_action.json    # Agent actions the LLM can call (local)
-│   ├── router_action.json  # Router actions the LLM can call (via queue)
-│   ├── input_history.json   # Last 10 user/response pairs
-│   ├── artifact.json        # Latest action results, follow-ups
-│   └── output/              # Generated files (prompt_cache, browser_vision.*)
-│
-└── xxxxxbrain/, xxxxxear/, xxxxxmouth/, ...  # (Reserved) Future modular senses
-
+└── workspace/               # Runtime context and config
+    ├── PROMPT.md            # Main prompt template (placeholders)
+    ├── SOUL.md              # Identity, tone, ethical boundaries
+    ├── memory.json          # Persistent key-value memory
+    ├── agent_action.json    # Agent actions the LLM can call (local)
+    ├── router_action.json  # Router actions the LLM can call (via queue)
+    ├── input_history.json   # Last 10 user/response pairs
+    ├── artifact.json        # Latest action results, follow-ups
+    ├── schedule.json        # Scheduler tasks ([] if empty). Loaded by Scheduler in __init__.
+    └── output/              # Generated files (prompt_cache, browser_vision.*)
+ 
 
 COMPONENTS
 ----------
@@ -114,11 +113,12 @@ COMPONENTS
    - Adding a command: add function, add to run_command(), append to COMMANDS
 
 7. libs/scheduler.py (Scheduler)
+   - Loads workspace/schedule.json in __init__; creates with [] if missing
    - Tick thread: fires every minute, aligned to minute boundaries
-   - Logs to logs/schedule.log: "YYYY-MM-DD HH:MM:SS TICK"
+   - _check_schedule(): reloads schedule.json, finds records matching current minute, logs to logs/schedule.log or "No Action"
    - Agent owns it: BaseAgent creates Scheduler(agent=self), calls start() in run()
    - Clean shutdown: atexit + try/finally call stop() on Ctrl+C or quit
-   - Extensible for future scheduled tasks (reminders, prompts, actions)
+   - schedule property: read-only loaded tasks. Extensible for future scheduled tasks.
 
 8. libs/remote_chrome_utils.py
    - dismiss_consent(driver): Clicks cookie/consent buttons before screenshot
