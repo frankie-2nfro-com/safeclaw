@@ -8,12 +8,16 @@
   },
   {
     "name": "_ADD_SCHEDULE",
-    "instruction": "Add a scheduled reminder or task. Use when the user wants to be reminded at a specific time. limit_channel: empty [] = all channels; if user specifies channel(s), list them. For 'in X minutes' or 'in X mins': set relative_minutes to X (number) and message; datetime is ignored. For specific times (tomorrow 3pm, etc): use datetime YYYY-MM-DD HH:MM.",
+    "instruction": "Add a scheduled reminder or task. limit_channel: [] = all channels. CRITICAL: datetime must be YYYY-MM-DD HH:MM. NEVER put 'in 3 mins' in datetime. For 'in X mins': set relative_minutes to X, omit datetime. type 'reminder': data.message only, omit action/param. type 'action': user wants to RUN a task at a time - set data.action and data.param. Example 'set memory Task to Done in 3 mins': type action, data.action _MEMORY_WRITE, data.param {new_memory:{Task:Done}}, data.message 'Update Task to Done'. Example 'broadcast Hello in 5 mins': type action, data.action _BROADCAST_MSG, data.param {message:Hello,channels:[]}.",
     "params": {
-      "datetime": "YYYY-MM-DD HH:MM (use for specific times)",
-      "relative_minutes": "number (use for 'in X mins' - overrides datetime)",
-      "type": "reminder",
-      "message": "string",
+      "datetime": "YYYY-MM-DD HH:MM only. For 'in X mins' leave empty, use relative_minutes",
+      "relative_minutes": "number e.g. 3 for 'in 3 mins'. Required when user says 'in X minutes'",
+      "type": "reminder|action|prompt",
+      "data": {
+        "message": "string",
+        "action": "string (only when type is action, e.g. _MEMORY_WRITE, _BROADCAST_MSG)",
+        "param": "object (only when type is action, params for that action)"
+      },
       "limit_channel": []
     }
   },

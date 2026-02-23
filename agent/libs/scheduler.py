@@ -80,7 +80,8 @@ def remove_schedule_items(
             if normalize_datetime(item_dt) != dt_norm:
                 return False
         if msg_lower:
-            item_msg = item.get("message", "") or ""
+            data = item.get("data")
+            item_msg = (data.get("message", "") if isinstance(data, dict) else "") or item.get("message", "") or ""
             if msg_lower not in item_msg.lower():
                 return False
         return True
@@ -151,23 +152,72 @@ class Scheduler:
         except OSError:
             pass
 
+    def _get_item_message(self, item: dict) -> str:
+        """Get message from item: data.message (new format) or message (legacy)."""
+        data = item.get("data")
+        if isinstance(data, dict) and data.get("message"):
+            return str(data.get("message", ""))
+        return item.get("message") or ""
+
     def _run_schedule(self, item: dict) -> None:
         """Execute a matched schedule item. Type determines behavior.
-        'reminder' -> broadcast to channels; other types -> log only (implement later).
+        'reminder' -> broadcast to channels.
+        'action' -> run via ActionExecutor (agent or router based on action code).
         """
         item_type = (item.get("type") or "reminder").strip().lower()
 
         if item_type == "reminder":
-            message = item.get("message") or ""
+            message = self._get_item_message(item)
             if message and self._agent and hasattr(self._agent, "broadcast_message"):
                 channels = item.get("limit_channel")
                 channels = channels if (channels and isinstance(channels, list)) else None
                 self._agent.broadcast_message(f"Reminder: {message}", channels)
 
+        elif item_type == "action":
+            data = item.get("data")
+            if isinstance(data, dict):
+                action_name = data.get("action", "").strip()
+                param = data.get("param")
+                if action_name and isinstance(param, dict):
+                    try:
+                        from libs.action_executor import ActionExecutor
+
+                        workspace = self._get_workspace()
+                        executor = ActionExecutor(action_name, param, workspace=workspace)
+                        result = executor.execute()
+                        self._log(f"[Schedule] action={action_name} result={result}")
+                    except Exception as e:
+                        self._log(f"[Schedule] action={action_name} error={e}")
+
         self._log(f"[Schedule] type={item_type} {item}")
 
+    def _clean_up_schedules(self) -> int:
+        """Remove invalid and expired records from schedule. Returns count removed."""
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+        original_len = len(self._schedule)
+        kept: List[Any] = []
+
+        for item in self._schedule:
+            if not isinstance(item, dict):
+                continue
+            dt = item.get("datetime", "")
+            if not dt or not isinstance(dt, str):
+                continue
+            dt_norm = normalize_datetime(dt)
+            if not dt_norm:
+                continue
+            if dt_norm < now_str:
+                continue
+            kept.append(item)
+
+        removed = original_len - len(kept)
+        if removed > 0:
+            self._schedule[:] = kept
+            self._log(f"[Cleanup] removed {removed} invalid/expired record(s)")
+        return removed
+
     def _check_schedule(self) -> None:
-        """Reload schedule.json, find records matching current minute, run action, remove from schedule."""
+        """Reload schedule.json, find records matching current minute, run action, remove from schedule, then clean up."""
         self._load_schedule()
         now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
         to_remove: List[int] = []
@@ -182,8 +232,10 @@ class Scheduler:
         if to_remove:
             for i in reversed(to_remove):
                 self._schedule.pop(i)
+        cleanup_removed = self._clean_up_schedules()
+        if to_remove or cleanup_removed > 0:
             self._save_schedule()
-        else:
+        if not to_remove:
             self._log("No Action")
 
     def _tick_loop(self) -> None:

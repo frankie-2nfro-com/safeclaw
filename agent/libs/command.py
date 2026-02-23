@@ -80,7 +80,8 @@ def schedule(workspace: Path) -> str:
         lines = []
         for i, item in enumerate(items, 1):
             dt = item.get("datetime", "")
-            msg = item.get("message", "")
+            data = item.get("data")
+            msg = (data.get("message", "") if isinstance(data, dict) else "") or item.get("message", "")
             channels = item.get("limit_channel")
             if channels is None or not channels:
                 ch_str = "[all channels]"

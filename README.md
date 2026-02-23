@@ -126,7 +126,7 @@ python start_router.py
 - `_MEMORY_WRITE` – Update memory.json
 - `_BROWSER_VISION` – Screenshot/HTML via remote Chrome
 - `_LLM_SUMMARY` – Summarize content via Ollama
-- `_ADD_SCHEDULE` – Add scheduled reminder (datetime, message, limit_channel)
+- `_ADD_SCHEDULE` – Add scheduled reminder or action (see agent/SCHEDULE.md)
 - `_DELETE_SCHEDULE` – Remove reminders by datetime and/or message
 - `_BROADCAST_MSG` – Broadcast message to channels (message, channels; empty = all)
 

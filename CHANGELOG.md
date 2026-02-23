@@ -17,6 +17,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.0.30] - 2026-02-23
+
+### Added
+- Scheduler now support 'action'
+
+### Fixed
+- Console You: prompt need to resume when other broadcast messages
+
+---
+
 ## [1.0.29] - 2026-02-23
 
 ### Added

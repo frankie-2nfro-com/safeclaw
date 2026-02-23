@@ -17,6 +17,8 @@ class AddScheduleAction(BaseAgentAction):
 
         # When user says "in X mins", use relative_minutes to compute datetime server-side (avoids LLM errors)
         relative_minutes = self.params.get("relative_minutes")
+        if relative_minutes is None:
+            relative_minutes = _parse_relative_minutes(self.params.get("datetime", ""))
         if relative_minutes is not None:
             try:
                 mins = int(relative_minutes)
@@ -30,14 +32,30 @@ class AddScheduleAction(BaseAgentAction):
         else:
             dt_str = normalize_datetime(self.params.get("datetime", ""))
 
+        data_param = self.params.get("data")
+        if isinstance(data_param, dict):
+            msg = data_param.get("message", "")
+            action = data_param.get("action", "") or ""
+            param = data_param.get("param") if isinstance(data_param.get("param"), dict) else {}
+        else:
+            msg = self.params.get("message", "")
+            action = ""
+            param = {}
+
+        data = {"message": msg}
+        if action:
+            data["action"] = action
+        if param:
+            data["param"] = param
+
         item = {
             "datetime": dt_str,
             "type": self.params.get("type", "reminder"),
-            "message": self.params.get("message", ""),
+            "data": data,
             "limit_channel": limit_channel,
         }
         append_schedule_item(self.workspace, item)
         return {
             "action": "_ADD_SCHEDULE",
-            "text": f"Scheduled: {item['datetime']} - {item['message']}",
+            "text": f"Scheduled: {item['datetime']} - {data.get('message', '')}",
         }

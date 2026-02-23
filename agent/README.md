@@ -86,24 +86,14 @@ agent/
 
 ## Scheduler
 
-A tick thread runs every minute (aligned to minute boundaries). Checks `workspace/schedule.json` for records matching the current minute; logs matching items or "No Action" to `logs/schedule.log`.
-Agent owns the scheduler; it starts with the agent and stops cleanly on Ctrl+C or quit. Extensible for future scheduled tasks.
+A tick thread runs every minute (aligned to minute boundaries). Checks `workspace/schedule.json` for records matching the current minute; executes reminders (broadcast) or actions (agent/router), then removes them.
 
-### Schedule actions
+**See [SCHEDULE.md](SCHEDULE.md)** for full documentation.
 
-- **ADD_SCHEDULE** — Add a reminder at a specific time. Use `limit_channel: []` for all channels, or list channels (e.g. `["Telegram"]`).
-- **DELETE_SCHEDULE** — Remove reminders by `datetime` and/or `message` (substring match).
-
-### Sample prompts
-
-**Add reminders:**
-- `Remind me to check my email at 3pm tomorrow.`
-- `Remind me to send postcards at 4pm tomorrow by TELEGRAM`
-
-**Delete reminders:**
-- `Cancel the 3pm reminder` → `datetime: "2026-02-24 15:00"`
-- `Remove the email reminder` → `message: "email"`
-- `Delete the postcards reminder at 4pm` → `datetime: "2026-02-24 16:00"`, `message: "postcards"`
+- **type reminder** — Broadcasts `data.message` to channels.
+- **type action** — Runs agent or router action via ActionExecutor (`data.action`, `data.param`).
+- **ADD_SCHEDULE** / **DELETE_SCHEDULE** — Add or remove items.
+- **/schedule** — List all scheduled items.
 
 ## Channel commands
 

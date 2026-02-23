@@ -26,6 +26,7 @@ class ConsoleChannel(BaseChannel):
     def broadcast_receive(self, user_input: str, from_source: str) -> None:
         """Show messages replicated from other channels (e.g. Telegram)."""
         print(f"[{from_source}] {user_input}", flush=True)
+        print("You: ", end="", flush=True)
 
     def broadcast_response(self, response: str, from_source: str) -> None:
         """Show response replicated from another channel (e.g. Telegram)."""
@@ -33,8 +34,9 @@ class ConsoleChannel(BaseChannel):
         print("You: ", end="", flush=True)
 
     def send_broadcast(self, message: str) -> None:
-        """Send agent-initiated broadcast to console."""
+        """Send agent-initiated broadcast to console (e.g. scheduler reminders)."""
         print(f"\nSafeClaw: {message}\n", flush=True)
+        print("You: ", end="", flush=True)
 
     def run(self, agent) -> None:
         """Blocking loop: receive -> process -> send."""
