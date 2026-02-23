@@ -1,8 +1,16 @@
 [
-    { 
-        "datetime": "2026-02-23 10:45",
-        "type": "reminder",
-        "message": "Remind me to check the email",
-        "channel": ["telegram", "console"]
-    }
+  {
+    "datetime": "2026-02-24 15:00",
+    "type": "reminder",
+    "message": "Check your email",
+    "limit_channel": []
+  },
+  {
+    "datetime": "2026-02-24 16:00",
+    "type": "reminder",
+    "message": "Send postcards via Telegram",
+    "limit_channel": [
+      "Telegram"
+    ]
+  }
 ]

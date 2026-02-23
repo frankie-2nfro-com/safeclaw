@@ -7,6 +7,16 @@
     }
   },
   {
+    "name": "_ADD_SCHEDULE",
+    "instruction": "Add a scheduled reminder or task. Use when the user wants to be reminded at a specific time. limit_channel: empty [] = all channels; if user specifies channel(s), list them. datetime: use YYYY-MM-DD HH:MM (space not T).",
+    "params": {
+      "datetime": "YYYY-MM-DD HH:MM",
+      "type": "reminder",
+      "message": "string",
+      "limit_channel": []
+    }
+  },
+  {
     "name": "_BROWSER_VISION",
     "instruction": "Use this for ANY request to see, read, or get information from a website (including headlines, news, or summaries).",
     "params": {

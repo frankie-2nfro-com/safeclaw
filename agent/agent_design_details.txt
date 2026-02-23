@@ -77,6 +77,8 @@ COMPONENTS
 2. libs/base_llm.py (BaseLLM: prompt, parse, process_turn)
    - create_prompt(user_input) -> merged prompt string
    - Loads PROMPT.md, replaces placeholders:
+     {{CURRENT_DAY}}      <- Day of week (Mon, Tue, etc.)
+     {{CURRENT_DATETIME}} <- YYYY-MM-DD HH:MM:SS (for scheduling)
      {{SOUL_CONTENT}}     <- SOUL.md
      {{MEMORY_CONTENT}}   <- memory.json
      {{ARTIFACT}}         <- artifact.json
@@ -156,6 +158,8 @@ PROMPT TEMPLATE (PROMPT.md)
 ---------------------------
 
 Placeholders:
+  {{CURRENT_DAY}}        - Day of week (Mon, Tue, Wed, ...)
+  {{CURRENT_DATETIME}}   - Current date and time (YYYY-MM-DD HH:MM:SS)
   {{SOUL_CONTENT}}       - Identity from SOUL.md
   {{MEMORY_CONTENT}}     - memory.json
   {{ARTIFACT}}           - artifact.json (last action results)
@@ -228,7 +232,7 @@ Or from project root:
 
 Commands:
   ./start_agent.py           - Start the agent
-  ./start_agent.py clear    - Clear workspace (artifact, input_history, system.log, llm.log, schedule.log, output/)
+  ./start_agent.py clear    - Clear workspace (artifact, input_history, schedule.json, system.log, llm.log, schedule.log, output/)
   ./start_agent.py config [key] - Interactive config. Keys: timeout, llm
 
 Channel commands (Console and Telegram):

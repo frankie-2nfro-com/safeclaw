@@ -14,6 +14,22 @@ SCHEDULE_JSON = "schedule.json"
 SCHEDULE_LOG = Path(__file__).resolve().parent.parent / "logs" / "schedule.log"
 
 
+def append_schedule_item(workspace: Path, item: dict) -> None:
+    """Append item to schedule.json. Used by ADD_SCHEDULE action."""
+    path = Path(workspace) / SCHEDULE_JSON
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if not path.exists():
+        path.write_text("[]", encoding="utf-8")
+    try:
+        raw = path.read_text(encoding="utf-8").strip()
+        data = json.loads(raw) if raw else []
+        schedule = data if isinstance(data, list) else []
+        schedule.append(item)
+        path.write_text(json.dumps(schedule, indent=2), encoding="utf-8")
+    except (json.JSONDecodeError, OSError):
+        path.write_text(json.dumps([item], indent=2), encoding="utf-8")
+
+
 class Scheduler:
     """Tick scheduler. Agent creates, starts, and stops it. Loads schedule.json."""
 
@@ -29,9 +45,12 @@ class Scheduler:
             return Path(self._agent.WORKSPACE)
         return Path(__file__).resolve().parent.parent / "workspace"
 
+    def _get_schedule_path(self) -> Path:
+        return self._get_workspace() / SCHEDULE_JSON
+
     def _load_schedule(self) -> None:
         """Load schedule.json. Create with [] if missing."""
-        path = self._get_workspace() / SCHEDULE_JSON
+        path = self._get_schedule_path()
         path.parent.mkdir(parents=True, exist_ok=True)
         if not path.exists():
             path.write_text("[]", encoding="utf-8")
@@ -43,6 +62,15 @@ class Scheduler:
             self._schedule = data if isinstance(data, list) else []
         except (json.JSONDecodeError, OSError):
             self._schedule = []
+
+    def _save_schedule(self) -> None:
+        """Write schedule to schedule.json."""
+        try:
+            self._get_schedule_path().write_text(
+                json.dumps(self._schedule, indent=2), encoding="utf-8"
+            )
+        except OSError:
+            pass
 
     @property
     def schedule(self) -> List[Any]:
@@ -60,19 +88,28 @@ class Scheduler:
         except OSError:
             pass
 
+    def _run_schedule(self, item: dict) -> None:
+        """Execute a matched schedule item. Override or extend for actions."""
+        self._log(f"[Schedule] {item}")
+
     def _check_schedule(self) -> None:
-        """Reload schedule.json, find records matching current minute, log to schedule.log."""
+        """Reload schedule.json, find records matching current minute, run action, remove from schedule."""
         self._load_schedule()
         now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
-        found = False
-        for item in self._schedule:
+        to_remove: List[int] = []
+        for i, item in enumerate(self._schedule):
             if not isinstance(item, dict):
                 continue
             dt = item.get("datetime", "")
-            if isinstance(dt, str) and dt.strip() == now_str:
-                self._log(f"[Schedule] {item}")
-                found = True
-        if not found:
+            dt_norm = dt.replace("T", " ")[:16] if isinstance(dt, str) else ""
+            if dt_norm.strip() == now_str:
+                self._run_schedule(item)
+                to_remove.append(i)
+        if to_remove:
+            for i in reversed(to_remove):
+                self._schedule.pop(i)
+            self._save_schedule()
+        else:
             self._log("No Action")
 
     def _tick_loop(self) -> None:

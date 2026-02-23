@@ -30,7 +30,7 @@ Reset workspace and logs:
 ```bash
 ./start_agent.py clear
 ```
-Clears: artifact.json, input_history.json, system.log, llm.log, schedule.log, workspace/output/
+Clears: artifact.json, input_history.json, schedule.json, system.log, llm.log, schedule.log, workspace/output/
 
 ## Config
 

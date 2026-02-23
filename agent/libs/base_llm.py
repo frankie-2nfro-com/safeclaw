@@ -120,6 +120,9 @@ class BaseLLM(ABC):
             return None
 
         prompt = self._load_file(self.workspace / "PROMPT.md", "{{USER_MESSAGE}}")
+        now = datetime.now()
+        prompt = prompt.replace("{{CURRENT_DAY}}", now.strftime("%a"))
+        prompt = prompt.replace("{{CURRENT_DATETIME}}", now.strftime("%Y-%m-%d %H:%M:%S"))
         prompt = prompt.replace("{{MEMORY_CONTENT}}", self._load_memory())
         prompt = prompt.replace("{{ARTIFACT}}", self._load_artifact())
         prompt = prompt.replace("{{USER_INPUT_HISTORY}}", self._load_input_history())

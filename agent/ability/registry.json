@@ -1,8 +1,1 @@
-{
-  "_MEMORY_WRITE": {"ability": "memory_write", "class": "MemoryWriteAction"},
-  "MEMORY_WRITE": {"ability": "memory_write", "class": "MemoryWriteAction"},
-  "_BROWSER_VISION": {"ability": "browser_vision", "class": "BrowserVisionAction"},
-  "BROWSER_VISION": {"ability": "browser_vision", "class": "BrowserVisionAction"},
-  "_LLM_SUMMARY": {"ability": "llm_summary", "class": "LLMSummaryAction"},
-  "LLM_SUMMARY": {"ability": "llm_summary", "class": "LLMSummaryAction"}
-}
+{"_MEMORY_WRITE":{"ability":"memory_write","class":"MemoryWriteAction"},"MEMORY_WRITE":{"ability":"memory_write","class":"MemoryWriteAction"},"_ADD_SCHEDULE":{"ability":"add_schedule","class":"AddScheduleAction"},"ADD_SCHEDULE":{"ability":"add_schedule","class":"AddScheduleAction"},"_BROWSER_VISION":{"ability":"browser_vision","class":"BrowserVisionAction"},"BROWSER_VISION":{"ability":"browser_vision","class":"BrowserVisionAction"},"_LLM_SUMMARY":{"ability":"llm_summary","class":"LLMSummaryAction"},"LLM_SUMMARY":{"ability":"llm_summary","class":"LLMSummaryAction"}}
