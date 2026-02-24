@@ -180,7 +180,7 @@ class TelegramChannel(BaseChannel):
                 loop = asyncio.get_event_loop()
                 process_task = loop.run_in_executor(
                     None,
-                    lambda: agent.process(user_input, source),
+                    lambda: agent.process(user_input, source, flush_broadcasts_after=True),
                 )
                 async def keep_typing():
                     while True:
@@ -192,6 +192,7 @@ class TelegramChannel(BaseChannel):
                 text = (response or "(no response)")[:4096]
                 await update.message.reply_text(text)
                 agent.broadcast_response_to_other_channels(text, exclude_source=source)
+                agent._flush_pending_broadcasts()
             except Exception as e:
                 log(f"[Telegram] Error: {e}")
                 try:

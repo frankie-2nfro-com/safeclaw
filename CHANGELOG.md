@@ -17,6 +17,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.0.35] - 2026-02-24
+
+### Fixed
+- Process message sometime after the final response. 
+
+---
+
 ## [1.0.34] - 2026-02-24
 
 ### Changed

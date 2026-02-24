@@ -64,9 +64,10 @@ class ConsoleChannel(BaseChannel):
             agent.broadcast_to_other_channels(user_input, exclude_source=source)
             stop_typing = agent.start_typing_except(source)
             try:
-                response = agent.process(user_input, source)
+                response = agent.process(user_input, source, flush_broadcasts_after=True)
                 self.send(response)
                 agent.broadcast_response_to_other_channels(response, exclude_source=source)
+                agent._flush_pending_broadcasts()
             except Exception as e:
                 err_msg = f"Error: {e}"
                 self.send(err_msg)

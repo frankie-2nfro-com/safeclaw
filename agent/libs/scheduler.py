@@ -181,12 +181,13 @@ class Scheduler:
                     # Pass as normal user request (_ADD_SCHEDULE excluded when source=Schedule)
                     prompt_input = message
                     response = self._agent.process(prompt_input, source="Schedule", flush_broadcasts_after=True)
+                    # Send broadcast content first (tool output), then [Scheduled] response
+                    if hasattr(self._agent, "_flush_pending_broadcasts"):
+                        self._agent._flush_pending_broadcasts()
                     if response and hasattr(self._agent, "broadcast_message"):
                         channels = item.get("limit_channel")
                         channels = channels if (channels and isinstance(channels, list)) else None
                         self._agent.broadcast_message(f"[Scheduled] {response}", channels)
-                    if hasattr(self._agent, "_flush_pending_broadcasts"):
-                        self._agent._flush_pending_broadcasts()
                     self._log(f"[Schedule] prompt executed: {message[:50]}...")
                 except Exception as e:
                     self._log(f"[Schedule] prompt error: {e}")
