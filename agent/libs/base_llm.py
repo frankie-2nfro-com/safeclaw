@@ -119,7 +119,10 @@ class BaseLLM(ABC):
         if not clear_escaped_text:
             return None
 
-        prompt = self._load_file(self.workspace / "PROMPT.md", "{{USER_MESSAGE}}")
+        prompt_path = self._root / "llm" / self.provider / "PROMPT.md"
+        if not prompt_path.exists():
+            prompt_path = self._root / "llm" / "ollama" / "PROMPT.md"
+        prompt = self._load_file(prompt_path, "{{USER_MESSAGE}}")
         now = datetime.now()
         prompt = prompt.replace("{{CURRENT_DAY}}", now.strftime("%a"))
         prompt = prompt.replace("{{CURRENT_DATETIME}}", now.strftime("%Y-%m-%d %H:%M:%S"))

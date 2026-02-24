@@ -66,7 +66,7 @@ agent/
     memory.json
     input_history.json
     schedule.json       # Scheduler tasks ([] if empty)
-    PROMPT.md
+    llm/{provider}/PROMPT.md
     ...
   logs/
     system.log

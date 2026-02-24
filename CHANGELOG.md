@@ -17,6 +17,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.0.33] - 2026-02-24
+
+### Added
+- Add local gemini bridge llm extended class
+
+### Changed
+- Take out PROMPT.md from /workspace and clone to under llm extended class folder for llm prompt tuning
+- Gemini prompt tuning
+
+---
+
 ## [1.0.32] - 2026-02-23
 
 ### Added

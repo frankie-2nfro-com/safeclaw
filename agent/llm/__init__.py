@@ -14,10 +14,13 @@ def get_llm(workspace, provider: str = None, model: str = None) -> BaseLLM:
     if provider == "ollama":
         from llm.ollama.llm import OllamaLLM
         return OllamaLLM(workspace=workspace, provider=provider, model=model)
+    if provider == "chrome_extension_gemini":
+        from llm.chrome_extension_gemini.llm import ChromeExtensionGeminiLLM
+        return ChromeExtensionGeminiLLM(workspace=workspace, provider=provider, model=model)
     #if provider == "openai":
     #    from llm.openai.llm import OpenAILLM
     #    return OpenAILLM(workspace=workspace, provider=provider, model=model)
     #if provider == "gemini":
     #    from llm.gemini.llm import GeminiLLM
     #    return GeminiLLM(workspace=workspace, provider=provider, model=model)
-    raise ValueError(f"Unknown LLM_PROVIDER: {provider}. Use ollama, openai, or gemini.")
+    raise ValueError(f"Unknown LLM_PROVIDER: {provider}. Use ollama, chrome_extension_gemini, openai, or gemini.")

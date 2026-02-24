@@ -37,7 +37,7 @@ SafeClaw/
 ├── agent/                 # Self-contained "Mind" component
 │   ├── start_agent.py     # Entry point
 │   ├── libs/              # base_llm, action_executor, remote_chrome_utils
-│   ├── workspace/         # PROMPT.md, SOUL.md, memory, artifacts
+│   ├── workspace/         # SOUL.md, memory, artifacts
 │   ├── README.md
 │   └── agent_design_details.txt
 │

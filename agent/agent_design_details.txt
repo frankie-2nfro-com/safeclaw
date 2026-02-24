@@ -53,7 +53,7 @@ agent/
 │       └── OLLAMA_SETUP.md
 │
 └── workspace/               # Runtime context and config
-    ├── PROMPT.md            # Main prompt template (placeholders)
+    ├── llm/{provider}/PROMPT.md  # Prompt template per LLM provider
     ├── SOUL.md              # Identity, tone, ethical boundaries
     ├── memory.json          # Persistent key-value memory
     ├── agent_action.json    # Agent actions the LLM can call (local)
@@ -76,7 +76,7 @@ COMPONENTS
 
 2. libs/base_llm.py (BaseLLM: prompt, parse, process_turn)
    - create_prompt(user_input) -> merged prompt string
-   - Loads PROMPT.md, replaces placeholders:
+   - Loads llm/{provider}/PROMPT.md, replaces placeholders:
      {{CURRENT_DAY}}      <- Day of week (Mon, Tue, etc.)
      {{CURRENT_DATETIME}} <- YYYY-MM-DD HH:MM:SS (for scheduling)
      {{SOUL_CONTENT}}     <- SOUL.md
@@ -154,7 +154,7 @@ Example: CREATE_POST
   Router skill executes, returns { "status": "..." }.
 
 
-PROMPT TEMPLATE (PROMPT.md)
+PROMPT TEMPLATE (llm/{provider}/PROMPT.md)
 ---------------------------
 
 Placeholders:
