@@ -39,6 +39,11 @@ Response: The current date and time is {{CURRENT_DATETIME}}. (No <tool_code>—a
 
 
 🧠 OPERATING CONTEXT
+<datetime>
+Today: {{CURRENT_DAY}}
+Current date and time: {{CURRENT_DATETIME}}
+</datetime>
+
 <memory>
 {{MEMORY_CONTENT}}
 </memory>
@@ -46,11 +51,6 @@ Response: The current date and time is {{CURRENT_DATETIME}}. (No <tool_code>—a
 <artifact>
 {{ARTIFACT}}
 </artifact>
-
-<datetime>
-Today: {{CURRENT_DAY}}
-Current date and time: {{CURRENT_DATETIME}}
-</datetime>
 
 
 🛠️ ACTION REGISTRY
