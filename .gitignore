@@ -44,3 +44,6 @@ temp/
 
 router/config.json
 agent/config.json
+
+# Router skills (project-specific, not for repo)
+router/skills/mongchoi_query/

@@ -143,6 +143,26 @@ class BaseLLM(ABC):
         """Send prompt to LLM and return response. Implemented by provider subclasses."""
         pass
 
+    def _summarize_action_data(self, instruction: str, data) -> Optional[str]:
+        """Ask LLM to summarize data. Prompt: [instruction] + [data]. Returns summary or None."""
+        if not instruction or data is None:
+            return None
+        if isinstance(data, list):
+            data_str = "\n".join(str(x) for x in data)
+        elif isinstance(data, dict):
+            data_str = json.dumps(data, indent=2, ensure_ascii=False)
+        else:
+            data_str = str(data)
+        if not data_str.strip():
+            return None
+        prompt = f"""{instruction}
+
+{data_str}"""
+        try:
+            return self.chat(prompt).strip()
+        except Exception:
+            return None
+
     # --- Response parsing (from llm_response.py) ---
     def _parse_response(self, output: str) -> Tuple[str, Optional[list]]:
         if not output or not isinstance(output, str):
@@ -224,13 +244,12 @@ class BaseLLM(ABC):
 
                 follow_up_results = []
                 for follow_info in artifact["data"]:
-                    if (
-                        follow_info.get("data")
-                        and isinstance(follow_info["data"], dict)
-                        and "follow_up" in follow_info["data"]
-                    ):
+                    data = follow_info.get("data")
+                    if not data or not isinstance(data, dict):
+                        continue
+                    if "follow_up" in data:
                         try:
-                            fu = follow_info["data"]["follow_up"]
+                            fu = data["follow_up"]
                             executor = ActionExecutor(fu["name"], fu["params"], workspace=self.workspace)
                             result = executor.execute()
                             output = result.get("output", str(result))
@@ -238,6 +257,19 @@ class BaseLLM(ABC):
                             follow_up_results.append({"action": fu["name"], "output": output})
                         except Exception:
                             pass
+                    if data.get("text"):
+                        response_parts.append(data["text"])
+                    if data.get("instruction") and data.get("data"):
+                        raw_data = data["data"]
+                        if raw_data is not None and raw_data != [] and raw_data != {}:
+                            summary = self._summarize_action_data(
+                                data["instruction"],
+                                raw_data,
+                            )
+                            if summary:
+                                response_parts.append(summary)
+                    elif not data.get("text") and data.get("output"):
+                        response_parts.append(data["output"])
 
                 meaningful_data = [x for x in artifact["data"] if x.get("data") is not None]
                 if meaningful_data:
