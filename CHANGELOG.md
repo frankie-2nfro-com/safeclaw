@@ -17,6 +17,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.0.37] - 2026-02-25
+
+### Fixed
+- Skill fail return handling
+
+---
+
 ## [1.0.36] - 2026-02-25
 
 ### Added

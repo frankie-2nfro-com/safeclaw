@@ -257,19 +257,24 @@ class BaseLLM(ABC):
                             follow_up_results.append({"action": fu["name"], "output": output})
                         except Exception:
                             pass
-                    if data.get("text"):
-                        response_parts.append(data["text"])
-                    if data.get("instruction") and data.get("data"):
-                        raw_data = data["data"]
-                        if raw_data is not None and raw_data != [] and raw_data != {}:
-                            summary = self._summarize_action_data(
-                                data["instruction"],
-                                raw_data,
-                            )
-                            if summary:
-                                response_parts.append(summary)
-                    elif not data.get("text") and data.get("output"):
-                        response_parts.append(data["output"])
+                    status = (data.get("status") or "").strip()
+                    if status == "Failed":
+                        err_msg = data.get("text") or data.get("error") or "Something went wrong."
+                        response_parts.append(f"Action failed: {err_msg}")
+                    elif status == "Executed" or not status:
+                        if data.get("text"):
+                            response_parts.append(data["text"])
+                        if data.get("instruction") and data.get("data"):
+                            raw_data = data["data"]
+                            if raw_data is not None and raw_data != [] and raw_data != {}:
+                                summary = self._summarize_action_data(
+                                    data["instruction"],
+                                    raw_data,
+                                )
+                                if summary:
+                                    response_parts.append(summary)
+                        #elif data.get("output"):
+                        #    response_parts.append(data["output"])
 
                 meaningful_data = [x for x in artifact["data"] if x.get("data") is not None]
                 if meaningful_data:
