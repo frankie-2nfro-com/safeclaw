@@ -238,7 +238,9 @@ class BaseLLM(ABC):
                     try:
                         executor = ActionExecutor(action["name"], action["params"], workspace=self.workspace)
                         executed_result = executor.execute()
-                        artifact["data"].append({"data": _strip_params(executed_result)})
+                        artifact["data"].append({"data": _strip_params(executed_result) if executed_result is not None else None})
+                        if executed_result is None:
+                            response_parts.append("Action failed: No response from router (timeout or error).")
                     except Exception as e:
                         response_parts.append(f"Error: {e}")
 

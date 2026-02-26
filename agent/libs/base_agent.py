@@ -15,6 +15,7 @@ from typing import List, Optional
 from dotenv import load_dotenv
 
 from channel.console.channel import ConsoleChannel
+from channel.headless.channel import HeadlessChannel
 from libs.agent_config import AgentConfig
 from libs.logger import LOG_PATH, dialog, log, logging_setup
 from libs.scheduler import Scheduler
@@ -89,6 +90,10 @@ class BaseAgent:
                 ch = TelegramChannel(channel_cfg=c)
                 if ch.bot_token:
                     channels.append(ch)
+            elif c.get("name") == "headless" and c.get("enabled", True):
+                ch = HeadlessChannel(channel_cfg=c)
+                if ch.enabled:
+                    channels.append(ch)
         return channels
 
     def _ensure_ready(self) -> None:
@@ -130,6 +135,12 @@ class BaseAgent:
         self._scheduler.start()
         atexit.register(self._scheduler.stop)
         try:
+            # Headless channel: runs in background thread
+            headless_ch = next((c for c in self.channels if c.source_name == "Headless"), None)
+            if headless_ch:
+                t_lan = threading.Thread(target=headless_ch.run, args=(self,))
+                t_lan.daemon = True
+                t_lan.start()
             # Telegram (and similar) must run in main thread - run_polling uses signal handlers
             telegram_ch = next((c for c in self.channels if c.source_name == "Telegram"), None)
             console_ch = next((c for c in self.channels if c.source_name == "Console"), None)

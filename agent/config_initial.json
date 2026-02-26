@@ -9,8 +9,12 @@
       "enabled": false,
       "bot_token": "",
       "broadcast_chat_ids": []
+    },
+    {
+      "name": "headless",
+      "enabled": true
     }
   ],
-  "timeout": 10, 
+  "timeout": 10,
   "thinking": true
 }

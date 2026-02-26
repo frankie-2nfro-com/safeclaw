@@ -1,1 +1,28 @@
-[]
+[
+  {
+    "datetime": "2026-03-01 08:00",
+    "type": "action",
+    "data": {
+      "message": "March Morning Weather Update",
+      "action": "_BROADCAST_MSG",
+      "param": {
+        "message": "It's 8:00 AM. Check the sky before heading out\u2014March in Manchester is unpredictable. Stay protected.",
+        "channels": []
+      }
+    },
+    "limit_channel": []
+  },
+  {
+    "datetime": "2026-03-01 08:00",
+    "type": "action",
+    "data": {
+      "message": "March Daily Weather (Recurring)",
+      "action": "_BROADCAST_MSG",
+      "param": {
+        "message": "Daily Check: It's 8:00 AM. March weather in Manchester is shifting. Stay alert and keep your waterproofs ready, Wai Kau.",
+        "channels": []
+      }
+    },
+    "limit_channel": []
+  }
+]

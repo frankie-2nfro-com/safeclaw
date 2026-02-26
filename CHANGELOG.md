@@ -17,6 +17,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.0.38] - 2026-02-26
+
+### Added
+- Headless channel so that it provide interface for other LAN service to interact with agent
+
+### Changed
+- Adjust PROMPT
+
+---
+
 ## [1.0.37] - 2026-02-25
 
 ### Fixed

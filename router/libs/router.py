@@ -112,10 +112,14 @@ class Router:
                     action = parsed.get("action")
                     params = parsed.get("params", {})
 
-                    result = self.route_command(action, params)
-
                     response_key = f"{response_prefix}{message_id}"
-                    response = {"status": "ok", "action": action, **(result or {})}
+                    try:
+                        result = self.route_command(action, params) or {}
+                        response = {"action": action, **result}
+                        response.setdefault("status", "ok")
+                    except Exception as e:
+                        print(f"Error: {e}")
+                        response = {"status": "Failed", "text": str(e), "action": action}
                     r.lpush(response_key, json.dumps(response))
                 except json.JSONDecodeError as e:
                     print(f"Invalid JSON: {e}")
