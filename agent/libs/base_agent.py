@@ -252,14 +252,15 @@ class BaseAgent:
 
     @classmethod
     def clear_workspace(cls) -> None:
-        """Reset artifact.json, input_history.json, schedule.json, clear logs, and workspace/output/."""
+        """Reset artifact.json, input_history.json, delete schedule.json, clear logs, and workspace/output/."""
         cls.WORKSPACE.mkdir(parents=True, exist_ok=True)
         with open(cls.WORKSPACE / "artifact.json", "w", encoding="utf-8") as f:
             json.dump({}, f, indent=2)
         with open(cls.WORKSPACE / "input_history.json", "w", encoding="utf-8") as f:
             json.dump([], f, indent=2)
-        with open(cls.WORKSPACE / "schedule.json", "w", encoding="utf-8") as f:
-            json.dump([], f, indent=2)
+        schedule_path = cls.WORKSPACE / "schedule.json"
+        if schedule_path.exists():
+            schedule_path.unlink()
         if LOG_PATH.exists():
             LOG_PATH.write_text("", encoding="utf-8")
         llm_log = LOG_PATH.parent / "llm.log"
@@ -272,4 +273,4 @@ class BaseAgent:
         if output_dir.exists():
             shutil.rmtree(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
-        print("Cleared artifact.json, input_history.json, schedule.json, system.log, llm.log, schedule.log, and workspace/output/", flush=True)
+        print("Cleared artifact.json, input_history.json, schedule.json (deleted), system.log, llm.log, schedule.log, and workspace/output/", flush=True)

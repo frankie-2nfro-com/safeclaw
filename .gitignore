@@ -35,6 +35,7 @@ agent/logs/
 agent/workspace/memory.json
 agent/workspace/input_history.json
 agent/workspace/artifact.json
+agent/workspace/schedule.json
 agent/workspace/agent_action.json
 agent/workspace/router_action.json
 agent/workspace/SOUL.md
