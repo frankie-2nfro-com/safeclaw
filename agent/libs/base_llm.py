@@ -79,6 +79,8 @@ class BaseLLM(ABC):
         except json.JSONDecodeError:
             return raw
 
+    MAX_HISTORY_CHARS = 8000
+
     def _load_input_history(self) -> str:
         path = self.workspace / "input_history.json"
         if not path.exists():
@@ -90,20 +92,16 @@ class BaseLLM(ABC):
             data = json.loads(raw)
             if not isinstance(data, list):
                 return json.dumps([data], indent=2)
-            return json.dumps(data, indent=2)
-        except json.JSONDecodeError:
-            return raw
-
-    def _load_artifact(self) -> str:
-        path = self.workspace / "artifact.json"
-        if not path.exists():
-            return "(No artifact)"
-        raw = path.read_text(encoding="utf-8").strip()
-        if not raw:
-            return "{}"
-        try:
-            data = json.loads(raw)
-            return json.dumps(data, indent=2)
+            out = json.dumps(data, indent=2)
+            if len(out) <= self.MAX_HISTORY_CHARS:
+                return out
+            # Truncate: keep last 4 entries, shorten each response to ~150 chars
+            kept = data[-4:] if len(data) > 4 else data
+            for e in kept:
+                r = e.get("response", "")
+                if isinstance(r, str) and len(r) > 150:
+                    e["response"] = r[:147] + "..."
+            return json.dumps(kept, indent=2)
         except json.JSONDecodeError:
             return raw
 
@@ -127,7 +125,6 @@ class BaseLLM(ABC):
         prompt = prompt.replace("{{CURRENT_DAY}}", now.strftime("%a"))
         prompt = prompt.replace("{{CURRENT_DATETIME}}", now.strftime("%Y-%m-%d %H:%M:%S"))
         prompt = prompt.replace("{{MEMORY_CONTENT}}", self._load_memory())
-        prompt = prompt.replace("{{ARTIFACT}}", self._load_artifact())
         prompt = prompt.replace("{{USER_INPUT_HISTORY}}", self._load_input_history())
         prompt = prompt.replace("{{SOUL_CONTENT}}", self._load_file(self.workspace / "SOUL.md", "You are SafeClaw."))
         prompt = prompt.replace("{{AGENT_ACTIONS}}", self._load_agent_actions(), 1)
@@ -224,7 +221,7 @@ class BaseLLM(ABC):
 
             if actions:
                 from libs.action_executor import ActionExecutor
-                artifact = {"timestamp": datetime.now().isoformat(), "data": []}
+                action_results = []
                 PARAM_KEYS = {"full_page", "headless", "width", "height"}
 
                 def _strip_params(d):
@@ -238,14 +235,15 @@ class BaseLLM(ABC):
                     try:
                         executor = ActionExecutor(action["name"], action["params"], workspace=self.workspace)
                         executed_result = executor.execute()
-                        artifact["data"].append({"data": _strip_params(executed_result) if executed_result is not None else None})
+                        action_results.append({"data": _strip_params(executed_result) if executed_result is not None else None})
                         if executed_result is None:
                             response_parts.append("Action failed: No response from router (timeout or error).")
                     except Exception as e:
                         response_parts.append(f"Error: {e}")
 
                 follow_up_results = []
-                for follow_info in artifact["data"]:
+                digests = []  # Q/A pairs for input_history: [{Q: instruction, A: summary}]
+                for follow_info in action_results:
                     data = follow_info.get("data")
                     if not data or not isinstance(data, dict):
                         continue
@@ -275,24 +273,13 @@ class BaseLLM(ABC):
                                 )
                                 if summary:
                                     response_parts.append(summary)
-                        #elif data.get("output"):
-                        #    response_parts.append(data["output"])
+                                    digests.append({"Q": data["instruction"], "A": summary})
 
-                meaningful_data = [x for x in artifact["data"] if x.get("data") is not None]
-                if meaningful_data:
-                    artifact_to_save = {
-                        "timestamp": artifact["timestamp"],
-                        "data": meaningful_data,
-                    }
-                    if follow_up_results:
-                        artifact_to_save["follow_up_results"] = follow_up_results
-                    (self.workspace / "artifact.json").write_text(json.dumps(artifact_to_save, indent=2), encoding="utf-8")
-
-            entry = {"user_input": user_input, "response": message}
-            if actions:
-                meaningful_output = [x for x in artifact["data"] if x.get("data") is not None]
-                if meaningful_output:
-                    entry["output"] = {"data": meaningful_output}
+            if actions and digests:
+                response_for_history = "\n\n".join(d["A"] for d in digests)
+            else:
+                response_for_history = message
+            entry = {"user_input": user_input, "response": response_for_history}
             input_history.append(entry)
             for fu in follow_up_results:
                 input_history.append({"follow_up_action": fu["action"], "response": fu["output"]})

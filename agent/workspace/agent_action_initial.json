@@ -48,9 +48,9 @@
   },
   {
     "name": "_LLM_SUMMARY",
-    "instruction": "Use this for ANY request to summarize any text or content in the artifact.",
+    "instruction": "Use this for ANY request to summarize any text or content.",
     "params": {
-      "content": "path to content file from artifact"
+      "content": "path to content file"
     }
   }
 ]

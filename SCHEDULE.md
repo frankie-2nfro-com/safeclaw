@@ -146,7 +146,7 @@ Use `_ADD_SCHEDULE` via natural language:
 - `Broadcast Hello in 5 mins`
 
 **Scheduled prompts (run instruction at time):**
-- `Schedule to run a prompt after 3 mins. Prompt: get current date and time and broadcast`
+- `Schedule to run a prompt after 2 mins. Prompt: get current date and time and broadcast`
 - `Schedule this prompt after 2 mins: Check current datetime and broadcast to telegram`
 
 For "in X mins", use `relative_minutes` (server computes datetime). For specific times, use `datetime` in `YYYY-MM-DD HH:MM`.

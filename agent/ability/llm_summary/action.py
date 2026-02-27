@@ -31,7 +31,7 @@ class LLMSummaryAction(BaseAgentAction):
         if not content_file:
             return {
                 "action": "_LLM_SUMMARY",
-                "error": "Missing 'content' param (path to file). Use artifact content path.",
+                "error": "Missing 'content' param (path to content file).",
                 "status": "failed",
             }
         path = Path(content_file)

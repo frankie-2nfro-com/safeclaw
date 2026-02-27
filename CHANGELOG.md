@@ -17,6 +17,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.0.42] - 2026-02-27
+
+### Added
+- (add changes here)
+
+### Changed
+- (add changes here)
+
+### Fixed
+- (add fixes here)
+
+---
+
+## [1.0.41] - 2026-02-27
+
+### Changed
+- Take out <artifact> as input history is enough for short memory. 
+
+### Fixed
+- Fix too long prompt to make the request prompt to llm truncated
+
+---
+
 ## [1.0.40] - 2026-02-26
 
 ### Fixed
