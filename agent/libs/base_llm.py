@@ -136,27 +136,26 @@ class BaseLLM(ABC):
         return prompt
 
     @abstractmethod
-    def chat(self, prompt: str) -> str:
-        """Send prompt to LLM and return response. Implemented by provider subclasses."""
+    def chat(self, prompt: str, options: Optional[list[str]] = None) -> str:
+        """Send prompt to LLM and return response. options: optional list of special instructions per provider."""
         pass
 
-    def _summarize_action_data(self, instruction: str, data) -> Optional[str]:
-        """Ask LLM to summarize data. Prompt: [instruction] + [data]. Returns summary or None."""
-        if not instruction or data is None:
+    def _generic_llm_request(self, instruction: str, data=None) -> Optional[str]:
+        """Send instruction (and optionally data) to LLM. Use for summarize, generate, etc. Returns response or None."""
+        if not instruction:
             return None
-        if isinstance(data, list):
-            data_str = "\n".join(str(x) for x in data)
-        elif isinstance(data, dict):
-            data_str = json.dumps(data, indent=2, ensure_ascii=False)
+        if data is None:
+            prompt = instruction
         else:
-            data_str = str(data)
-        if not data_str.strip():
-            return None
-        prompt = f"""{instruction}
-
-{data_str}"""
+            if isinstance(data, list):
+                data_str = "\n".join(str(x) for x in data)
+            elif isinstance(data, dict):
+                data_str = json.dumps(data, indent=2, ensure_ascii=False)
+            else:
+                data_str = str(data)
+            prompt = f"{instruction}\n\n{data_str}" if data_str.strip() else instruction
         try:
-            return self.chat(prompt).strip()
+            return self.chat(prompt, options=["RENEW_SESSION"]).strip()
         except Exception:
             return None
 
@@ -267,7 +266,7 @@ class BaseLLM(ABC):
                         if data.get("instruction") and data.get("data"):
                             raw_data = data["data"]
                             if raw_data is not None and raw_data != [] and raw_data != {}:
-                                summary = self._summarize_action_data(
+                                summary = self._generic_llm_request(
                                     data["instruction"],
                                     raw_data,
                                 )

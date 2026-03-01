@@ -17,6 +17,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.0.43] - 2026-03-01
+
+### Added
+- Add option parameter to chat function in llm. so that for different llm it accept prompt with option operation
+
+---
+
 ## [1.0.42] - 2026-02-27
 
 ### Added

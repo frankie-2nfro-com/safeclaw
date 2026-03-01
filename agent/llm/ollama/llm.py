@@ -15,7 +15,7 @@ class OllamaLLM(BaseLLM):
     def __init__(self, workspace: Path, provider: str = "ollama", model: Optional[str] = None):
         super().__init__(workspace=workspace, provider=provider, model=model)
 
-    def chat(self, prompt: str) -> str:
+    def chat(self, prompt: str, options: Optional[list[str]] = None) -> str:
         response = ollama.chat(model=self.model, messages=[{"role": "user", "content": prompt}])
         return response.message.content
 
