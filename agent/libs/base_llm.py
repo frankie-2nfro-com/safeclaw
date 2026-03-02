@@ -5,6 +5,7 @@ Provider-specific chat() is implemented by subclasses (OllamaLLM, GeminiLLM, etc
 import json
 import os
 import re
+import threading
 from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
@@ -140,6 +141,37 @@ class BaseLLM(ABC):
         """Send prompt to LLM and return response. options: optional list of special instructions per provider."""
         pass
 
+    def _get_llm_timeout(self) -> int:
+        """Timeout in seconds for LLM chat (from config.json llm_timeout, default 120). Applies to all providers."""
+        cfg_path = self.workspace.parent / "config.json"
+        if cfg_path.exists():
+            try:
+                cfg = json.loads(cfg_path.read_text(encoding="utf-8").strip())
+                return int(cfg.get("llm_timeout", 120))
+            except (json.JSONDecodeError, ValueError, TypeError):
+                pass
+        return 120
+
+    def _chat_with_timeout(self, prompt: str, options: Optional[list[str]] = None) -> str:
+        """Run chat() with timeout. Returns error string if LLM does not respond in time."""
+        result = [None]
+        exc = [None]
+
+        def run():
+            try:
+                result[0] = self.chat(prompt, options=options)
+            except Exception as e:
+                exc[0] = e
+
+        t = threading.Thread(target=run, daemon=True)
+        t.start()
+        t.join(timeout=self._get_llm_timeout())
+        if exc[0]:
+            raise exc[0]
+        if t.is_alive():
+            return "[Timeout] Response did not complete in time."
+        return result[0] or ""
+
     def _generic_llm_request(self, instruction: str, data=None) -> Optional[str]:
         """Send instruction (and optionally data) to LLM. Use for summarize, generate, etc. Returns response or None."""
         if not instruction:
@@ -155,7 +187,7 @@ class BaseLLM(ABC):
                 data_str = str(data)
             prompt = f"{instruction}\n\n{data_str}" if data_str.strip() else instruction
         try:
-            return self.chat(prompt, options=["RENEW_SESSION"]).strip()
+            return self._chat_with_timeout(prompt, options=["RENEW_SESSION"]).strip()
         except Exception:
             return None
 
@@ -202,7 +234,7 @@ class BaseLLM(ABC):
         if thinking:
             dialog("Waiting for LLM...")
         try:
-            output = self.chat(prompt)
+            output = self._chat_with_timeout(prompt)
         except Exception as e:
             return self._format_chat_error(e)
 

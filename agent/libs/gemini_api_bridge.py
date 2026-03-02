@@ -23,12 +23,16 @@ def ask_gemini(
     options: optional list of special instructions for the bridge.
     workspace: if provided, store full response JSON to workspace/artifact.json.
     Returns the response text (parses {"type":"text","content":"..."} and returns content).
+    Timeout is enforced by BaseLLM._chat_with_timeout for all providers.
     """
     if not prompt or not str(prompt).strip():
         raise ValueError("Prompt is empty")
 
     try:
         r = redis.from_url(redis_url)
+        # Drain stale responses from previous requests (e.g. timeouts) so we get our response
+        while r.llen(PROMPT_QUEUE_OUT) > 0:
+            r.lpop(PROMPT_QUEUE_OUT)
         req_id = f"req_{int(time.time() * 1000)}"
         payload = {"id": req_id, "prompt": prompt}
         if options and "RENEW_SESSION" in options:
