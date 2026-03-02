@@ -62,8 +62,15 @@ class ActionExecutor:
             executed_successfully = True
         else:
             # ROUTER ACTION: push to Redis, wait for response
+            params = dict(self.params)
+            if params.get("option") == "USE_ARTIFACT":
+                artifact_data = self._load_artifact()
+                if artifact_data is not None:
+                    params["artifact"] = artifact_data
+                else:
+                    log("USE_ARTIFACT: artifact.json not found or invalid, proceeding without artifact")
             execution_message += f"Router Action: {self.action}\n"
-            execution_message += f"Params: {self.params}\n"
+            execution_message += f"Params: {params}\n"
 
             if self._get_thinking():
                 dialog(f"Waiting for router ({self.action})...")
@@ -77,7 +84,7 @@ class ActionExecutor:
             )
             runner_thread.start()
 
-            self._push_to_command_queue(message_id, self.action, self.params)
+            self._push_to_command_queue(message_id, self.action, params)
 
             timeout = self._get_timeout()
             start = time.time()
@@ -98,6 +105,16 @@ class ActionExecutor:
             log(execution_message.strip())
 
         return result
+
+    def _load_artifact(self):
+        """Load workspace/artifact.json. Returns parsed dict or None if missing/invalid."""
+        artifact_path = self.workspace / "artifact.json"
+        if not artifact_path.exists():
+            return None
+        try:
+            return json.loads(artifact_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            return None
 
     def _get_redis(self):
         url = os.getenv("REDIS_URL")

@@ -220,7 +220,8 @@ class BaseLLM(ABC):
 
             if actions:
                 from libs.action_executor import ActionExecutor
-                action_results = []
+                follow_up_results = []
+                digests = []  # Q/A pairs for input_history: [{Q: instruction, A: summary}]
                 PARAM_KEYS = {"full_page", "headless", "width", "height"}
 
                 def _strip_params(d):
@@ -234,18 +235,16 @@ class BaseLLM(ABC):
                     try:
                         executor = ActionExecutor(action["name"], action["params"], workspace=self.workspace)
                         executed_result = executor.execute()
-                        action_results.append({"data": _strip_params(executed_result) if executed_result is not None else None})
-                        if executed_result is None:
-                            response_parts.append("Action failed: No response from router (timeout or error).")
+                        data = _strip_params(executed_result) if executed_result is not None else None
                     except Exception as e:
                         response_parts.append(f"Error: {e}")
-
-                follow_up_results = []
-                digests = []  # Q/A pairs for input_history: [{Q: instruction, A: summary}]
-                for follow_info in action_results:
-                    data = follow_info.get("data")
+                        continue
+                    if executed_result is None:
+                        response_parts.append("Action failed: No response from router (timeout or error).")
+                        continue
                     if not data or not isinstance(data, dict):
                         continue
+                    # Process result immediately so artifact/state is updated before next action
                     if "follow_up" in data:
                         try:
                             fu = data["follow_up"]

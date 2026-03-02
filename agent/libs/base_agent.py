@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 from channel.console.channel import ConsoleChannel
 from channel.headless.channel import HeadlessChannel
 from libs.agent_config import AgentConfig
-from libs.logger import LOG_PATH, dialog, log, logging_setup
+from libs.logger import dialog, log, logging_setup
 from libs.scheduler import Scheduler
 from channel.telegram.channel import TelegramChannel
 from llm import get_llm
@@ -261,14 +261,15 @@ class BaseAgent:
         schedule_path = cls.WORKSPACE / "schedule.json"
         if schedule_path.exists():
             schedule_path.unlink()
-        if LOG_PATH.exists():
-            LOG_PATH.write_text("", encoding="utf-8")
-        llm_log = LOG_PATH.parent / "llm.log"
-        if llm_log.exists():
-            llm_log.write_text("", encoding="utf-8")
-        schedule_log = LOG_PATH.parent / "schedule.log"
-        if schedule_log.exists():
-            schedule_log.write_text("", encoding="utf-8")
+        logs_dir = (cls.AGENT_DIR / "logs").resolve()
+        logs_dir.mkdir(parents=True, exist_ok=True)
+        for log_name in ("system.log", "llm.log", "schedule.log"):
+            log_path = logs_dir / log_name
+            if log_path.exists():
+                log_path.unlink()
+        # Recreate empty log files so agent can append; unlink leaves dir without them
+        for log_name in ("system.log", "llm.log", "schedule.log"):
+            (logs_dir / log_name).touch()
         output_dir = cls.WORKSPACE / "output"
         if output_dir.exists():
             shutil.rmtree(output_dir)

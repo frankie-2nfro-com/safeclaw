@@ -63,7 +63,9 @@ class Router:
         Returns result from skill.execute().
         """
         skill_list = self.config.get("skill", [])
-        skill_config = next((s for s in skill_list if s.get("name") == action), {})
+        skill_config = next((s for s in skill_list if s.get("name") == action), None)
+        if skill_config is None:
+            return {"status": "skipped", "reason": f"Skill {action} is not in config"}
         if skill_config.get("enabled", True) is False:
             return {"status": "skipped", "reason": f"Skill {action} is disabled in config"}
         SkillClass = self._get_skill_class(action)

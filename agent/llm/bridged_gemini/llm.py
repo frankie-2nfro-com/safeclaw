@@ -17,7 +17,7 @@ class BridgedGeminiLLM(BaseLLM):
         self._redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
 
     def chat(self, prompt: str, options: Optional[list[str]] = None) -> str:
-        return ask_gemini(prompt, redis_url=self._redis_url, options=options)
+        return ask_gemini(prompt, redis_url=self._redis_url, options=options, workspace=self.workspace)
 
     def _format_chat_error(self, e: Exception) -> str:
         return f"Error: {e}\n(Ensure bridge is running and Redis is reachable at REDIS_URL)"

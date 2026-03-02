@@ -17,6 +17,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.0.44] - 2026-03-02
+
+### Added
+- Add mechanism to save last llm result to artifact.json and allow action to use ARTIFACT
+
+---
+
 ## [1.0.43] - 2026-03-01
 
 ### Added
