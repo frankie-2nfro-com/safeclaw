@@ -17,6 +17,7 @@ from dotenv import load_dotenv
 from channel.console.channel import ConsoleChannel
 from channel.headless.channel import HeadlessChannel
 from libs.agent_config import AgentConfig
+from libs.debug_log import debug_log, init_from_argv, is_debug, truncate_debug
 from libs.logger import dialog, log, logging_setup
 from libs.scheduler import Scheduler
 from channel.telegram.channel import TelegramChannel
@@ -54,6 +55,7 @@ class BaseAgent:
         """
         load_dotenv()
         logging_setup()
+        init_from_argv(sys.argv)
         self._exit_clear = False
         if len(sys.argv) > 1 and sys.argv[1].lower() == "clear":
             self.clear_workspace()
@@ -122,6 +124,9 @@ class BaseAgent:
         dialog("")
         dialog(f"Channels: {', '.join(channel_names)}")
         dialog(f"Router Actions: {', '.join(router_actions)}" if router_actions else "Router Actions: (none)")
+        if is_debug():
+            dialog("Debug: traces -> logs/debug.log")
+            debug_log("Agent started (banner); DEBUG mode on")
         dialog("Tip: /restart to restart the agent.")
         dialog("")
 
@@ -168,10 +173,14 @@ class BaseAgent:
             if ch.source_name != exclude_source:
                 ch.broadcast_receive(user_input, exclude_source)
 
-    def broadcast_response_to_other_channels(self, response: str, exclude_source: str) -> None:
-        """Replicate a response to all channels except the source."""
+    def broadcast_response_to_other_channels(
+        self, response: str, exclude_source: str, exclude_console_when_streamed: bool = False
+    ) -> None:
+        """Replicate a response to all channels except the source. exclude_console_when_streamed: skip Console to avoid duplicate."""
         for ch in self.channels:
             if ch.source_name != exclude_source:
+                if exclude_console_when_streamed and ch.source_name == "Console":
+                    continue
                 ch.broadcast_response(response, exclude_source)
 
     def broadcast_message(self, message: str, channels: Optional[List[str]] = None) -> None:
@@ -224,14 +233,17 @@ class BaseAgent:
 
         return stop
 
-    def process(self, user_input: str, source: str = "Console", flush_broadcasts_after: bool = False) -> str:
-        """Process one turn. Returns response text. flush_broadcasts_after: if True, caller flushes (for correct order)."""
+    def process(self, user_input: str, source: str = "Console", flush_broadcasts_after: bool = False):
+        """Process one turn. Returns (response, streamed_to_console). flush_broadcasts_after: if True, caller flushes."""
+        debug_log(f"process: source={source!r} input={truncate_debug(user_input)}")
         self._ensure_ready()
         thinking = self.config.get("thinking", True)
-        response = self._llm.process_turn(user_input, thinking=thinking)
+        result = self._llm.process_turn(user_input, thinking=thinking)
         if not flush_broadcasts_after:
             self._flush_pending_broadcasts()
-        return response
+        resp_preview = result[0] if isinstance(result, tuple) else result
+        debug_log(f"process: done source={source!r} response_preview={truncate_debug(resp_preview, 400)}")
+        return result
 
     @classmethod
     def ensure_workspace_files(cls) -> None:
@@ -263,15 +275,19 @@ class BaseAgent:
             schedule_path.unlink()
         logs_dir = (cls.AGENT_DIR / "logs").resolve()
         logs_dir.mkdir(parents=True, exist_ok=True)
-        for log_name in ("system.log", "llm.log", "schedule.log"):
+        for log_name in ("system.log", "llm.log", "schedule.log", "debug.log"):
             log_path = logs_dir / log_name
             if log_path.exists():
                 log_path.unlink()
         # Recreate empty log files so agent can append; unlink leaves dir without them
-        for log_name in ("system.log", "llm.log", "schedule.log"):
+        for log_name in ("system.log", "llm.log", "schedule.log", "debug.log"):
             (logs_dir / log_name).touch()
         output_dir = cls.WORKSPACE / "output"
         if output_dir.exists():
             shutil.rmtree(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
-        print("Cleared input_history.json, schedule.json (deleted), artifact.json (deleted), system.log, llm.log, schedule.log, and workspace/output/", flush=True)
+        print(
+            "Cleared input_history.json, schedule.json (deleted), artifact.json (deleted), "
+            "system.log, llm.log, schedule.log, debug.log, and workspace/output/",
+            flush=True,
+        )

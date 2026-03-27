@@ -36,12 +36,16 @@ class RequestClient:
         payload = {"id": request_id, "prompt": prompt, "timestamp": int(time.time() * 1000)}
         self.redis.lpush(self.queue_in, json.dumps(payload))
 
-    def _wait_for_response(self) -> dict[str, Any]:
-        result = self.redis.blpop(self.queue_out, timeout=0)
-        if result is None:
-            raise TimeoutError("No response received")
-        _, raw = result
-        return json.loads(raw)
+    def _wait_for_response(self, request_id: str) -> dict[str, Any]:
+        while True:
+            result = self.redis.blpop(self.queue_out, timeout=0)
+            if result is None:
+                raise TimeoutError("No response received")
+            _, raw = result
+            data = json.loads(raw)
+            if data.get("id") == request_id:
+                return data
+            # Mismatch: stale/previous response. Discard and keep waiting for ours.
 
     def send_with_callback(
         self, request_id: str, prompt: str, callback: Callable[[Any], None]
@@ -51,7 +55,7 @@ class RequestClient:
 
         Args:
             request_id: Unique ID for this request.
-            prompt: Text to send to Gemini.
+            prompt: Text to send.
             callback: Called with the response dict when done. Dict has keys: type, id, response, timestamp.
 
         Raises:
@@ -60,7 +64,7 @@ class RequestClient:
         if callback is None:
             raise ValueError("callback is required")
         self._validate_and_push(request_id, prompt)
-        data = self._wait_for_response()
+        data = self._wait_for_response(request_id)
         callback(data)
 
     def send_and_wait(self, request_id: str, prompt: str) -> dict[str, Any]:
@@ -69,7 +73,7 @@ class RequestClient:
 
         Args:
             request_id: Unique ID for this request.
-            prompt: Text to send to Gemini.
+            prompt: Text to send.
 
         Returns:
             Response dict with keys: type, id, response, timestamp.
@@ -78,7 +82,7 @@ class RequestClient:
             ValueError: If request_id or prompt is invalid.
         """
         self._validate_and_push(request_id, prompt)
-        return self._wait_for_response()
+        return self._wait_for_response(request_id)
 
     def close(self) -> None:
         """Close the Redis connection."""
@@ -91,50 +95,3 @@ class RequestClient:
 
     def __exit__(self, *args) -> None:
         self.close()
-
-
-
-
-
-""" SAMPLE USAGE 
-
-
-import sys
-import time
-
-from libs import RequestClient
-
-REDIS_URL = "redis://192.168.1.153:6379"
-QUEUE_IN = "IN_QUEUE"
-QUEUE_OUT = "OUT_QUEUE"
-
-
-def main():
-    send_only = False
-    args = sys.argv[1:]
-    if args and args[0] == "--send-only":
-        send_only = True
-        args = args[1:]
-
-    if not args:
-        print("Usage: python test.py [--send-only] \"<prompt>\"", file=sys.stderr)
-        sys.exit(1)
-
-    prompt = args[0]
-
-    with RequestClient(REDIS_URL, QUEUE_IN, QUEUE_OUT) as req:
-        request_id = f"req_{int(time.time() * 1000)}"
-        if send_only:
-            req._validate_and_push(request_id, prompt)
-            print(f"Sent request {request_id}", file=sys.stderr)
-        else:
-            result = req.send_and_wait(request_id, prompt)
-            print(result["response"])
-
-
-if __name__ == "__main__":
-    main()
-
-
-
-"""

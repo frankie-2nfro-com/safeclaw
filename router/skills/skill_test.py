@@ -58,7 +58,7 @@ def main():
         description="Test router skills from the command line.",
         epilog="""
 Examples:
-  python3 skill_test.py mongchoi_query query=race race_date=2026/02/25 race_no=1 horse_no=3
+  python3 skill_test.py mongchoi_query query=race race_date=2026/02/25 race_no=1
   python3 skill_test.py hello_world
   python3 skill_test.py create_post platform="LinkedIn" text="Hello world!"
         """,

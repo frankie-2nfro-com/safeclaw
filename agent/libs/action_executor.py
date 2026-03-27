@@ -11,6 +11,7 @@ from typing import Optional
 
 from redis import Redis
 
+from libs.debug_log import debug_log, truncate_debug
 from libs.logger import dialog, log
 
 COMMAND_QUEUE = "safeclaw:command_queue"
@@ -53,6 +54,7 @@ class ActionExecutor:
 
         if action_class is not None:
             # AGENT ACTION: instantiate from registry and execute
+            debug_log(f"ActionExecutor: agent ability action={self.action!r}")
             execution_message += f"Agent Action: {self.action}\n"
             execution_message += f"Params: {self.params}\n"
             if self._get_thinking():
@@ -62,6 +64,7 @@ class ActionExecutor:
             executed_successfully = True
         else:
             # ROUTER ACTION: push to Redis, wait for response
+            debug_log(f"ActionExecutor: router action={self.action!r} params_keys={list(self.params.keys())}")
             params = dict(self.params)
             if params.get("option") == "USE_ARTIFACT":
                 artifact_data = self._load_artifact()
@@ -96,7 +99,16 @@ class ActionExecutor:
             execution_message += f"PUSH ROUTER ACTION TO QUEUE: {self.action}\n"
             executed_successfully = True
             if result is None:
+                debug_log(
+                    f"ActionExecutor: router timeout action={self.action!r} "
+                    f"message_id={message_id} waited_s={timeout}"
+                )
                 log(f"Timeout {timeout} seconds without any response!")
+            else:
+                debug_log(
+                    f"ActionExecutor: router response ok action={self.action!r} "
+                    f"status={result.get('status')!r} preview={truncate_debug(result, 300)}"
+                )
 
         execution_message += "--- Action Finished ---\n"
 
@@ -124,12 +136,20 @@ class ActionExecutor:
 
     def _push_to_command_queue(self, message_id: str, action: str, params: dict) -> None:
         """Push command to Redis queue. Router will process and push to response:{message_id}."""
-        payload = json.dumps({"message_id": message_id, "action": action, "params": params})
+        payload = json.dumps(
+            {"message_id": message_id, "action": action, "params": params},
+            ensure_ascii=False,
+        )
         try:
             r = self._get_redis()
             r.lpush(COMMAND_QUEUE, payload)
+            debug_log(
+                f"router_queue: LPUSH {COMMAND_QUEUE} ok message_id={message_id} "
+                f"action={action!r} payload_len={len(payload)}"
+            )
             log(f"PUSH ROUTER ACTION TO QUEUE: {payload}")
         except Exception as e:
+            debug_log(f"router_queue: LPUSH {COMMAND_QUEUE} FAIL message_id={message_id} error={e!r}")
             log(f"Redis push error: {e}")
 
     def _subscribe_to_response_queue(self, result_holder: list, message_id: str) -> None:
@@ -145,8 +165,13 @@ class ActionExecutor:
             log(f"Waiting for response for {timeout} seconds...")
             blpop_result = r.blpop(response_key, timeout=timeout)
             if blpop_result:
+                debug_log(f"router_queue: BLPOP {response_key} ok (got response)")
                 log("RESPONSE_FOUND")
                 _, raw = blpop_result
-                result_holder[0] = json.loads(raw)
+                s = raw.decode("utf-8") if isinstance(raw, bytes) else raw
+                result_holder[0] = json.loads(s)
+            else:
+                debug_log(f"router_queue: BLPOP {response_key} empty/timeout key after {timeout}s")
         except Exception as e:
+            debug_log(f"router_queue: BLPOP {response_key} error {e!r}")
             log(f"Redis subscribe error: {e}")

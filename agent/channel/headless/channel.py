@@ -69,9 +69,12 @@ class HeadlessChannel(BaseChannel):
                 }
             try:
                 agent.broadcast_to_other_channels(prompt, exclude_source=self.SOURCE_NAME)
-                response = agent.process(prompt, source=self.SOURCE_NAME, flush_broadcasts_after=True)
+                result = agent.process(prompt, source=self.SOURCE_NAME, flush_broadcasts_after=True)
+                response, streamed = result if isinstance(result, tuple) else (result, False)
                 agent._flush_pending_broadcasts()
-                agent.broadcast_response_to_other_channels(response or "", exclude_source=self.SOURCE_NAME)
+                agent.broadcast_response_to_other_channels(
+                    response or "", exclude_source=self.SOURCE_NAME, exclude_console_when_streamed=streamed
+                )
                 return {"id": request_id, "response": response or "", "type": "response"}
             except Exception as e:
                 err_msg = f"[Error] {e}"

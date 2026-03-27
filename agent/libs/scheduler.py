@@ -180,7 +180,8 @@ class Scheduler:
                 try:
                     # Pass as normal user request (_ADD_SCHEDULE excluded when source=Schedule)
                     prompt_input = message
-                    response = self._agent.process(prompt_input, source="Schedule", flush_broadcasts_after=True)
+                    result = self._agent.process(prompt_input, source="Schedule", flush_broadcasts_after=True)
+                    response, _ = result if isinstance(result, tuple) else (result, False)
                     # Send broadcast content first (tool output), then [Scheduled] response
                     if hasattr(self._agent, "_flush_pending_broadcasts"):
                         self._agent._flush_pending_broadcasts()

@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """
 Start the agent. Run from agent/: python start_agent.py  or  ./start_agent.py
-BaseAgent constructor loads config, handles argv (e.g. clear), builds channels.
+BaseAgent constructor loads config, handles argv (e.g. clear, DEBUG), builds channels.
+
+  ./start_agent.py DEBUG       — append detailed traces to logs/debug.log
+  ./start_agent.py clear       — reset workspace + logs (including debug.log)
 
 Interactive config: ./start_agent.py config [key]
   e.g. ./start_agent.py config timeout

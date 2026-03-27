@@ -6,6 +6,8 @@ from typing import Any, Callable, Optional
 
 import redis
 
+from libs.debug_log import debug_log, truncate_debug
+
 
 class ResponseClient:
     """
@@ -53,13 +55,23 @@ class ResponseClient:
             if result is None:
                 continue
             _, raw = result
+            if isinstance(raw, bytes):
+                raw = raw.decode("utf-8")
             request = json.loads(raw)
+            rid = request.get("id", "")
+            prompt_preview = truncate_debug((request.get("prompt") or "").strip(), 200)
+            debug_log(f"LAN queue: BLPOP {self.queue_in} ok id={rid!r} prompt_preview={prompt_preview}")
             try:
                 response = handler(request)
                 if response is not None:
                     if "timestamp" not in response:
                         response = {**response, "timestamp": int(time.time() * 1000)}
-                    self.redis.rpush(self.queue_out, json.dumps(response))
+                    out_raw = json.dumps(response, ensure_ascii=False)
+                    self.redis.rpush(self.queue_out, out_raw)
+                    debug_log(
+                        f"LAN queue: RPUSH {self.queue_out} ok id={response.get('id', rid)!r} "
+                        f"bytes={len(out_raw.encode('utf-8'))}"
+                    )
             except Exception as e:
                 # Push error response so RequestClient doesn't block forever
                 err_response = {
@@ -69,6 +81,7 @@ class ResponseClient:
                     "timestamp": int(time.time() * 1000),
                 }
                 self.redis.rpush(self.queue_out, json.dumps(err_response))
+                debug_log(f"LAN queue: RPUSH {self.queue_out} error_response id={rid!r} exc={e!r}")
 
     def close(self) -> None:
         """Close the Redis connection."""
@@ -81,40 +94,3 @@ class ResponseClient:
 
     def __exit__(self, *args) -> None:
         self.close()
-
-
-
-
-""" SAMPLE USAGE 
-
-
-from libs import ResponseClient
-
-REDIS_URL = "redis://192.168.1.153:6379"
-QUEUE_IN = "IN_QUEUE"
-QUEUE_OUT = "OUT_QUEUE"
-
-
-def handler(request: dict) -> dict:
-    #Application logic: receives request, returns result. No Redis/queue knowledge.
-    prompt = request.get("prompt", "")
-    request_id = request.get("id", "")
-    # Example: echo back (replace with real logic, e.g. call extension)
-    return {
-        "id": request_id,
-        "response": f"You said: {prompt} (I've handled this request #{request_id})",
-        "type": "response",
-    }
-
-
-def main():
-    print("Gateway listening on queue_in, pushing results to queue_out...")
-    with ResponseClient(REDIS_URL, QUEUE_IN, QUEUE_OUT) as client:
-        client.run(handler)
-
-
-if __name__ == "__main__":
-    main()
-
-
-"""

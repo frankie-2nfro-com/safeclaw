@@ -188,10 +188,13 @@ class TelegramChannel(BaseChannel):
                         done, _ = await asyncio.wait([process_task], timeout=4)
                         if done:
                             break
-                _, response = await asyncio.gather(keep_typing(), process_task)
+                _, result = await asyncio.gather(keep_typing(), process_task)
+                response, streamed = result if isinstance(result, tuple) else (result, False)
                 text = (response or "(no response)")[:4096]
                 await update.message.reply_text(text)
-                agent.broadcast_response_to_other_channels(text, exclude_source=source)
+                agent.broadcast_response_to_other_channels(
+                    text, exclude_source=source, exclude_console_when_streamed=streamed
+                )
                 agent._flush_pending_broadcasts()
             except Exception as e:
                 log(f"[Telegram] Error: {e}")

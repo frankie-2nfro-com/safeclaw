@@ -17,6 +17,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [1.0.46] - 2026-03-27
+
+### Changed
+- Fixed llm issues
+
+---
+
 ## [1.0.45] - 2026-03-02
 
 ### Fixed

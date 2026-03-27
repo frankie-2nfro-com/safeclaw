@@ -11,6 +11,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, Tuple
 
+from libs.debug_log import debug_log
 from libs.logger import dialog
 
 
@@ -154,6 +155,11 @@ class BaseLLM(ABC):
 
     def _chat_with_timeout(self, prompt: str, options: Optional[list[str]] = None) -> str:
         """Run chat() with timeout. Returns error string if LLM does not respond in time."""
+        timeout_s = self._get_llm_timeout()
+        debug_log(
+            f"LLM: chat start provider={self.provider} timeout_s={timeout_s} "
+            f"prompt_len={len(prompt)} options={options!r}"
+        )
         result = [None]
         exc = [None]
 
@@ -165,12 +171,16 @@ class BaseLLM(ABC):
 
         t = threading.Thread(target=run, daemon=True)
         t.start()
-        t.join(timeout=self._get_llm_timeout())
+        t.join(timeout=timeout_s)
         if exc[0]:
+            debug_log(f"LLM: chat failed exception={exc[0]!r}")
             raise exc[0]
         if t.is_alive():
+            debug_log(f"LLM: chat TIMEOUT after {timeout_s}s (thread still running)")
             return "[Timeout] Response did not complete in time."
-        return result[0] or ""
+        out = result[0] or ""
+        debug_log(f"LLM: chat ok output_len={len(out)}")
+        return out
 
     def _generic_llm_request(self, instruction: str, data=None) -> Optional[str]:
         """Send instruction (and optionally data) to LLM. Use for summarize, generate, etc. Returns response or None."""
@@ -222,7 +232,7 @@ class BaseLLM(ABC):
 
         prompt = self.create_prompt(user_input)
         if not prompt:
-            return "(Empty prompt, skipping)"
+            return ("(Empty prompt, skipping)", False)
 
         # Log Q immediately (when user asked)
         llm_log_path = self._root / "logs" / "llm.log"
@@ -233,10 +243,12 @@ class BaseLLM(ABC):
 
         if thinking:
             dialog("Waiting for LLM...")
+        debug_log(f"process_turn: built prompt len={len(prompt)}")
         try:
             output = self._chat_with_timeout(prompt)
         except Exception as e:
-            return self._format_chat_error(e)
+            debug_log(f"process_turn: LLM error {e!r}")
+            return (self._format_chat_error(e), False)
 
         # Log A when LLM responds (collapse newlines between text and <tool_code>)
         ts_a = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -247,6 +259,11 @@ class BaseLLM(ABC):
 
         try:
             message, actions = self._parse_response(output)
+            if actions:
+                names = [a.get("name", "?") for a in actions if isinstance(a, dict)]
+                debug_log(f"process_turn: tool_code actions count={len(actions)} names={names}")
+            else:
+                debug_log("process_turn: no tool_code; text-only reply")
             response_parts = [message]
             follow_up_results = []
 
@@ -264,46 +281,54 @@ class BaseLLM(ABC):
                     return d
 
                 for action in actions:
+                    prev_len = len(response_parts)
                     try:
-                        executor = ActionExecutor(action["name"], action["params"], workspace=self.workspace)
-                        executed_result = executor.execute()
-                        data = _strip_params(executed_result) if executed_result is not None else None
-                    except Exception as e:
-                        response_parts.append(f"Error: {e}")
-                        continue
-                    if executed_result is None:
-                        response_parts.append("Action failed: No response from router (timeout or error).")
-                        continue
-                    if not data or not isinstance(data, dict):
-                        continue
-                    # Process result immediately so artifact/state is updated before next action
-                    if "follow_up" in data:
                         try:
-                            fu = data["follow_up"]
-                            executor = ActionExecutor(fu["name"], fu["params"], workspace=self.workspace)
-                            result = executor.execute()
-                            output = result.get("output", str(result))
-                            response_parts.append(output)
-                            follow_up_results.append({"action": fu["name"], "output": output})
-                        except Exception:
-                            pass
-                    status = (data.get("status") or "").strip()
-                    if status == "Failed":
-                        err_msg = data.get("text") or data.get("error") or "Something went wrong."
-                        response_parts.append(f"Action failed: {err_msg}")
-                    elif status == "Executed" or not status:
-                        if data.get("text"):
-                            response_parts.append(data["text"])
-                        if data.get("instruction") and data.get("data"):
-                            raw_data = data["data"]
-                            if raw_data is not None and raw_data != [] and raw_data != {}:
-                                summary = self._generic_llm_request(
-                                    data["instruction"],
-                                    raw_data,
-                                )
-                                if summary:
-                                    response_parts.append(summary)
-                                    digests.append({"Q": data["instruction"], "A": summary})
+                            executor = ActionExecutor(action["name"], action["params"], workspace=self.workspace)
+                            executed_result = executor.execute()
+                            data = _strip_params(executed_result) if executed_result is not None else None
+                        except Exception as e:
+                            response_parts.append(f"Error: {e}")
+                            continue
+                        if executed_result is None:
+                            response_parts.append("Action failed: No response from router (timeout or error).")
+                            continue
+                        if not data or not isinstance(data, dict):
+                            continue
+                        # Process result immediately so artifact/state is updated before next action
+                        if "follow_up" in data:
+                            try:
+                                fu = data["follow_up"]
+                                executor = ActionExecutor(fu["name"], fu["params"], workspace=self.workspace)
+                                result = executor.execute()
+                                output = result.get("output", str(result))
+                                response_parts.append(output)
+                                follow_up_results.append({"action": fu["name"], "output": output})
+                            except Exception:
+                                pass
+                        status = (data.get("status") or "").strip()
+                        if status == "Failed":
+                            err_msg = data.get("text") or data.get("error") or "Something went wrong."
+                            response_parts.append(f"Action failed: {err_msg}")
+                        elif status == "Executed" or not status:
+                            if data.get("text"):
+                                response_parts.append(data["text"])
+                            if data.get("instruction") and data.get("data"):
+                                raw_data = data["data"]
+                                if raw_data is not None and raw_data != [] and raw_data != {}:
+                                    summary = self._generic_llm_request(
+                                        data["instruction"],
+                                        raw_data,
+                                    )
+                                    if summary:
+                                        response_parts.append(summary)
+                                        digests.append({"Q": data["instruction"], "A": summary})
+                    finally:
+                        # Flush new content before next action so QUERY result appears before UPDATE
+                        if len(response_parts) > prev_len:
+                            to_flush = "\n\n".join(response_parts[prev_len:])
+                            if to_flush.strip():
+                                dialog(to_flush)
 
             if actions and digests:
                 response_for_history = "\n\n".join(d["A"] for d in digests)
@@ -319,10 +344,13 @@ class BaseLLM(ABC):
                 json.dumps(input_history, indent=2), encoding="utf-8"
             )
 
-            return "\n\n".join(response_parts)
+            response = "\n\n".join(response_parts)
+            # When we had actions and flushed incrementally, skip duplicate send to Console
+            streamed_to_console = bool(actions)
+            return (response, streamed_to_console)
 
         except LLMResponseError as e:
-            return f"(Parse error: {e})"
+            return (f"(Parse error: {e})", False)
 
     def _format_chat_error(self, e: Exception) -> str:
         """Override in subclasses for provider-specific error messages."""

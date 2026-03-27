@@ -41,6 +41,9 @@ agent/workspace/SOUL.md
 
 
 temp/
+Chrome_Bridge/
+backend_call_direct/
+agent/llm/bridged_gemini/
 
 router/config.json
 agent/config.json

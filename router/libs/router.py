@@ -9,11 +9,32 @@ import json
 import os
 import signal
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 from redis import Redis
 
 ROUTER_DIR = Path(__file__).resolve().parent.parent
+IN_OUT_LOG = ROUTER_DIR / "logs" / "in_out.log"
+
+
+def _log_in_out(direction: str, data: str) -> None:
+    """Append to router/logs/in_out.log and print to console. direction: 'IN' or 'OUT'."""
+    IN_OUT_LOG.parent.mkdir(parents=True, exist_ok=True)
+    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    line = f"[{ts}] {direction}\n{data}\n\n"
+    with open(IN_OUT_LOG, "a", encoding="utf-8") as f:
+        f.write(line)
+    # Also print to console so you see activity
+    action = ""
+    try:
+        parsed = json.loads(data)
+        action = parsed.get("action", "")
+        status = parsed.get("status", "")
+        brief = f"{action}" + (f" {status}" if status else "")
+    except Exception:
+        brief = data[:80] + "..." if len(data) > 80 else data
+    print(f"[{ts}] {direction} {brief}", flush=True)
 
 
 class Router:
@@ -107,7 +128,8 @@ class Router:
             result = r.brpop(command_queue, timeout=1)
             if result:
                 _, raw = result
-                payload = raw.decode() if isinstance(raw, bytes) else raw
+                payload = raw.decode("utf-8") if isinstance(raw, bytes) else raw
+                _log_in_out("IN", payload)
                 try:
                     parsed = json.loads(payload)
                     message_id = parsed.get("message_id")
@@ -122,7 +144,9 @@ class Router:
                     except Exception as e:
                         print(f"Error: {e}")
                         response = {"status": "Failed", "text": str(e), "action": action}
-                    r.lpush(response_key, json.dumps(response))
+                    out_data = json.dumps(response, ensure_ascii=False)
+                    r.lpush(response_key, out_data)
+                    _log_in_out("OUT", out_data)
                 except json.JSONDecodeError as e:
                     print(f"Invalid JSON: {e}")
                 except Exception as e:
